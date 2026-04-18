@@ -1,13 +1,26 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Shield, LayoutDashboard, History, LogOut } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function Sidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
     { name: 'Scanner', path: '/scanner', icon: <Shield size={20} /> },
     { name: 'History', path: '/history', icon: <History size={20} /> },
   ];
+
+  async function handleLogout() {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Failed to log out', err);
+    }
+  }
 
   return (
     <aside className="w-64 bg-[#252526] border-r border-[#3c3c3c] flex flex-col">
@@ -36,7 +49,10 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-[#3c3c3c]">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-[#2a2d2e] hover:text-white w-full">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-[#2a2d2e] hover:text-white w-full"
+        >
           <LogOut size={20} />
           <span>Logout</span>
         </button>
@@ -44,3 +60,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

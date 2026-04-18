@@ -13,6 +13,12 @@ const DEFAULT_CODE = {
   go: '// Paste your Go code here\n\npassword := "admin123"\nquery := fmt.Sprintf("SELECT * FROM users WHERE username=\'%s\'", userInput)\ndb.Query(query)',
   cpp: '// Paste your C/C++ code here\n\nchar buffer[50];\nchar* secret = "MY_STATIC_KEY";\ngets(buffer); // Unsafe!',
   rust: '// Paste your Rust code here\n\nlet secret_token = "1234567890";\nunsafe {\n    // Bypassing safety checks\n    std::ptr::read(ptr);\n}',
+  ruby: '# Paste your Ruby code here\n\nAWS_KEY = "AKIAIOSFODNN7EXAMPLE"\nsystem("ping -c 1 " + user_input)',
+  swift: '// Paste your Swift mobile code here\n\nlet password = "supersecretpassword"\nUserDefaults.standard.set(password, forKey: "user_password")',
+  kotlin: '// Paste your Kotlin Android code here\n\nval sharedPref = activity?.getPreferences(Context.MODE_PRIVATE)\nwith (sharedPref.edit()) {\n    putString("user_password", "top_secret123")\n    apply()\n}',
+  vue: '<!-- Paste your Vue template here -->\n\n<template>\n  <div v-html="userProvidedMarkup"></div>\n</template>',
+  svelte: '<!-- Paste your Svelte code here -->\n\n<script>\n  export let userHtml = "<script>alert(1)<\\/script>";\n</script>\n\n<div>{@html userHtml}</div>',
+  docker: '# Paste your Dockerfile or Config here\n\nFROM ubuntu:latest\nRUN chmod 777 /etc/config\nCMD ["node", "app.js"]',
   react: '// Paste your React JSX code here\n\nconst userComment = "<img src=x onerror=alert(1)>";\nreturn <div dangerouslySetInnerHTML={{ __html: userComment }} />;',
   angular: '// Paste your Angular TypeScript code here\n\nimport { DomSanitizer } from "@angular/platform-browser";\nthis.sanitizer.bypassSecurityTrustHtml(userInput);'
 };
@@ -29,6 +35,12 @@ export default function Scanner() {
     switch(lang) {
       case 'react': return 'javascript';
       case 'angular': return 'typescript';
+      case 'vue': return 'html';
+      case 'svelte': return 'html';
+      case 'docker': return 'dockerfile';
+      case 'ruby': return 'ruby';
+      case 'swift': return 'swift';
+      case 'kotlin': return 'kotlin';
       case 'cpp': return 'cpp';
       default: return lang;
     }
@@ -116,6 +128,12 @@ export default function Scanner() {
               <option value="rust">Rust</option>
               <option value="react">React (JSX)</option>
               <option value="angular">Angular</option>
+              <option value="vue">Vue.js</option>
+              <option value="svelte">Svelte</option>
+              <option value="ruby">Ruby</option>
+              <option value="swift">Swift</option>
+              <option value="kotlin">Kotlin</option>
+              <option value="docker">Dockerfile / Shell</option>
             </select>
           </div>
           <div className="flex gap-3">

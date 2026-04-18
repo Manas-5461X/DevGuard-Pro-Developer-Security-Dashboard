@@ -146,6 +146,38 @@ export function analyzeCode(code) {
       severity: 'high',
       message: 'Reading serialized objects from untrusted sources can lead to remote code execution.',
       fix: 'Validate signatures of serialized streams or use safer data formats like JSON.'
+    },
+    {
+      id: 'vue-vhtml',
+      pattern: /\bv-html\s*=/i,
+      type: 'Vue XSS Risk',
+      severity: 'high',
+      message: 'Using v-html directive allows arbitrary HTML rendering and is prone to XSS.',
+      fix: 'Use text interpolation ({{ }}) instead or aggressively sanitize input using DOMPurify.'
+    },
+    {
+      id: 'svelte-at-html',
+      pattern: /\{@html\s+[^}]+\}/i,
+      type: 'Svelte XSS Risk',
+      severity: 'high',
+      message: 'The {@html} tag renders raw HTML directly into the DOM.',
+      fix: 'Sanitize content heavily before rendering or avoid using {@html} for user input.'
+    },
+    {
+      id: 'devops-chmod-777',
+      pattern: /chmod\s+(?:-\w+\s+)?777/i,
+      type: 'Insecure Permissions',
+      severity: 'high',
+      message: 'Granting full read/write/execute permissions (777) is a massive security risk.',
+      fix: 'Apply the principle of least privilege using strict access modifiers (e.g., 644 or 755).'
+    },
+    {
+      id: 'mobile-insecure-storage',
+      pattern: /(?:UserDefaults.*?\.set|putString)\([^,]+,\s*(?:['"])(?:AI|ya29|sk_live_|eyJ|password|top_|secret)[^'"]*/i,
+      type: 'Insecure Mobile Storage',
+      severity: 'medium',
+      message: 'Storing sensitive information in cleartext shared preferences is vulnerable to device extraction.',
+      fix: 'Use encrypted storage like Android EncryptedSharedPreferences or iOS Keychain.'
     }
   ];
 

@@ -190,10 +190,10 @@ export function analyzeCode(code) {
     },
     {
       id: 'obfuscated-shell-execution',
-      pattern: /(?:base64\s+-d|atob\().*(?:\||eval|exec)/i,
+      pattern: /(?:base64\s+-d|base64\s+--decode|atob\()/i,
       type: 'Malicious Obfuscation',
       severity: 'critical',
-      message: 'Decoding Base64 data and piping it directly into an executor mechanism is common malware behavior.',
+      message: 'Decoding Base64 data is a common technique used to hide malicious payloads.',
       fix: 'Never decode and execute blind byte streams. Validate all scripts in plaintext.'
     },
     {

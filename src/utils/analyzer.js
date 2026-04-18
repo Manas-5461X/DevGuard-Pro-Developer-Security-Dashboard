@@ -100,6 +100,46 @@ export function analyzeCode(code) {
       fix: 'Use specific API methods or safely escape all user input provided to OS commands.'
     },
     {
+      id: 'rust-unsafe-block',
+      pattern: /\bunsafe\s*\{/i,
+      type: 'Memory Safety Bypass',
+      severity: 'medium',
+      message: 'An unsafe block was detected in Rust, overriding compiler safety guarantees.',
+      fix: 'Audit the unsafe block heavily or refactor to use safe abstractions.'
+    },
+    {
+      id: 'react-dangerouslysetinnerhtml',
+      pattern: /dangerouslySetInnerHTML/i,
+      type: 'React XSS Risk',
+      severity: 'high',
+      message: 'Using dangerouslySetInnerHTML bypasses React\'s built-in XSS protection.',
+      fix: 'Sanitize input rigorously before rendering, or refactor to avoid raw HTML injection.'
+    },
+    {
+      id: 'angular-bypasssecurity',
+      pattern: /bypassSecurityTrust(?:Html|Script|Style|Url|ResourceUrl)/i,
+      type: 'Angular Injection Risk',
+      severity: 'high',
+      message: 'Explicitly bypassing Angular\'s DOM Sanitizer is extremely dangerous.',
+      fix: 'Ensure the data passed to the bypass function is 100% strictly validated.'
+    },
+    {
+       id: 'shell-unquoted-variables',
+       pattern: /rm\s+-r?[f]*\s+\$[a-zA-Z0-9_]+/i,
+       type: 'Dangerous Command execution',
+       severity: 'critical',
+       message: 'Unquoted variable passed to destructive command (like rm -rf).',
+       fix: 'Double quote the variable (e.g., "$VAR") or validate path boundaries.'
+    },
+    {
+       id: 'cpp-buffer-overflow',
+       pattern: /\b(?:strcpy|gets|sprintf|scanf)\b/i,
+       type: 'Buffer Overflow Risk',
+       severity: 'critical',
+       message: 'Usage of inherently unsafe C/C++ memory functions susceptible to buffer overflows.',
+       fix: 'Use bounded safe variants like strncpy, fgets, or snprintf.'
+    },
+    {
       id: 'insecure-deserialization',
       pattern: /(?:pickle\.loads|yaml\.load|ObjectInputStream|unserialize\s*\()/i,
       type: 'Insecure Deserialization',

@@ -8,7 +8,13 @@ const DEFAULT_CODE = {
   javascript: '// Paste your JavaScript code here\n\nconst API_KEY = "12345678901234";\ndocument.write("Hello User");\n',
   python: '# Paste your Python code here\n\nimport sqlite3\nconn = sqlite3.connect("users.db")\npassword = "supersecretpassword"\nquery = "SELECT * FROM users WHERE root = " + user_input\n',
   java: '// Paste your Java code here\n\nString AWS_SECRET = "AKIAIOSFODNN7EXAMPLE";\nStatement statement = connection.createStatement();\nResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE name = \'" + userName + "\'");\n',
-  php: '<?php\n// Paste your PHP code here\n$secret = "my_database_password";\necho "Hello " . $_GET["name"];\n?>'
+  php: '<?php\n// Paste your PHP code here\n$secret = "my_database_password";\necho "Hello " . $_GET["name"];\n?>',
+  shell: '# Paste your Shell script here\n\nexport PROD_TOKEN="ghp_123456789"\neval $USER_INPUT\nrm -rf $UNQUOTED_VAR/*',
+  go: '// Paste your Go code here\n\npassword := "admin123"\nquery := fmt.Sprintf("SELECT * FROM users WHERE username=\'%s\'", userInput)\ndb.Query(query)',
+  cpp: '// Paste your C/C++ code here\n\nchar buffer[50];\nchar* secret = "MY_STATIC_KEY";\ngets(buffer); // Unsafe!',
+  rust: '// Paste your Rust code here\n\nlet secret_token = "1234567890";\nunsafe {\n    // Bypassing safety checks\n    std::ptr::read(ptr);\n}',
+  react: '// Paste your React JSX code here\n\nconst userComment = "<img src=x onerror=alert(1)>";\nreturn <div dangerouslySetInnerHTML={{ __html: userComment }} />;',
+  angular: '// Paste your Angular TypeScript code here\n\nimport { DomSanitizer } from "@angular/platform-browser";\nthis.sanitizer.bypassSecurityTrustHtml(userInput);'
 };
 
 export default function Scanner() {
@@ -18,6 +24,15 @@ export default function Scanner() {
   const [hasScanned, setHasScanned] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { saveScan } = useScans();
+
+  const getMonacoLanguage = (lang) => {
+    switch(lang) {
+      case 'react': return 'javascript';
+      case 'angular': return 'typescript';
+      case 'cpp': return 'cpp';
+      default: return lang;
+    }
+  };
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -95,6 +110,12 @@ export default function Scanner() {
               <option value="python">Python</option>
               <option value="java">Java / C#</option>
               <option value="php">PHP</option>
+              <option value="shell">Shell Script</option>
+              <option value="go">Go (Golang)</option>
+              <option value="cpp">C / C++</option>
+              <option value="rust">Rust</option>
+              <option value="react">React (JSX)</option>
+              <option value="angular">Angular</option>
             </select>
           </div>
           <div className="flex gap-3">
@@ -128,7 +149,7 @@ export default function Scanner() {
         <div className="flex-1 rounded-xl overflow-hidden border border-[#3c3c3c] shadow-2xl">
           <Editor
             height="100%"
-            language={language}
+            language={getMonacoLanguage(language)}
             theme="vs-dark"
             value={code}
             onChange={(value) => setCode(value || '')}

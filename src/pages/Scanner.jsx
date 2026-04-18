@@ -84,11 +84,11 @@ export default function Scanner() {
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'critical': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      case 'high': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-      case 'medium': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-      case 'low': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-      default: return 'text-gray-500 bg-gray-500/10 border-gray-500/20';
+      case 'critical': return 'text-cyber-error border-cyber-error bg-cyber-error/10';
+      case 'high': return 'text-[#ff6600] border-[#ff6600] bg-[#ff6600]/10';
+      case 'medium': return 'text-cyber-warning border-cyber-warning bg-cyber-warning/10';
+      case 'low': return 'text-cyber-primary border-cyber-primary bg-cyber-primary/10';
+      default: return 'text-cyber-dark-text border-cyber-dark-text bg-cyber-surface';
     }
   };
 
@@ -105,35 +105,35 @@ export default function Scanner() {
   return (
     <div className="h-[calc(100vh-6rem)] flex gap-6">
       {/* Editor Section */}
-      <div className="flex-1 flex flex-col bg-[#1e1e1e] rounded-xl border border-[#3c3c3c] overflow-hidden shadow-2xl">
-        <div className="h-12 bg-[#252526] border-b border-[#3c3c3c] flex items-center justify-between px-4">
+      <div className="flex-1 flex flex-col cyber-panel overflow-hidden shadow-2xl">
+        <div className="h-12 border-b border-cyber-border flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-gray-300 font-medium text-sm flex items-center gap-2">
-              <Code2 size={16} />
-              Workspace
+            <h2 className="text-cyber-text font-bold text-sm tracking-widest flex items-center gap-2 uppercase">
+              <Code2 size={16} className="text-cyber-primary glow-text" />
+              Terminal Workspace
             </h2>
-            <div className="h-4 w-px bg-[#3c3c3c]"></div>
+            <div className="h-4 w-px bg-cyber-border"></div>
             <select 
               value={language}
               onChange={handleLanguageChange}
-              className="bg-[#1e1e1e] text-gray-300 text-sm border border-[#3c3c3c] rounded px-2 py-1 outline-none focus:border-blue-500 transition-colors"
+              className="bg-transparent text-cyber-primary text-sm border-none outline-none cursor-pointer tracking-wider focus:outline-none"
             >
-              <option value="javascript">JavaScript / TypeScript</option>
-              <option value="python">Python</option>
-              <option value="java">Java / C#</option>
-              <option value="php">PHP</option>
-              <option value="shell">Shell Script</option>
-              <option value="go">Go (Golang)</option>
-              <option value="cpp">C / C++</option>
-              <option value="rust">Rust</option>
-              <option value="react">React (JSX)</option>
-              <option value="angular">Angular</option>
-              <option value="vue">Vue.js</option>
-              <option value="svelte">Svelte</option>
-              <option value="ruby">Ruby</option>
-              <option value="swift">Swift</option>
-              <option value="kotlin">Kotlin</option>
-              <option value="docker">Dockerfile / Shell</option>
+              <option value="javascript" className="bg-cyber-bg text-cyber-text">JavaScript / TypeScript</option>
+              <option value="python" className="bg-cyber-bg text-cyber-text">Python</option>
+              <option value="java" className="bg-cyber-bg text-cyber-text">Java / C#</option>
+              <option value="php" className="bg-cyber-bg text-cyber-text">PHP</option>
+              <option value="shell" className="bg-cyber-bg text-cyber-text">Shell Script</option>
+              <option value="go" className="bg-cyber-bg text-cyber-text">Go (Golang)</option>
+              <option value="cpp" className="bg-cyber-bg text-cyber-text">C / C++</option>
+              <option value="rust" className="bg-cyber-bg text-cyber-text">Rust</option>
+              <option value="react" className="bg-cyber-bg text-cyber-text">React (JSX)</option>
+              <option value="angular" className="bg-cyber-bg text-cyber-text">Angular</option>
+              <option value="vue" className="bg-cyber-bg text-cyber-text">Vue.js</option>
+              <option value="svelte" className="bg-cyber-bg text-cyber-text">Svelte</option>
+              <option value="ruby" className="bg-cyber-bg text-cyber-text">Ruby</option>
+              <option value="swift" className="bg-cyber-bg text-cyber-text">Swift</option>
+              <option value="kotlin" className="bg-cyber-bg text-cyber-text">Kotlin</option>
+              <option value="docker" className="bg-cyber-bg text-cyber-text">Dockerfile / Shell</option>
             </select>
           </div>
           <div className="flex gap-3">
@@ -141,30 +141,30 @@ export default function Scanner() {
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-1.5 bg-[#252526] hover:bg-[#2d2d2d] text-green-500 border border-green-500/30 hover:border-green-500/60 rounded-lg transition-colors text-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-1.5 border border-cyber-primary text-cyber-primary hover:bg-cyber-primary/10 transition-colors text-sm uppercase tracking-widest disabled:opacity-50"
               >
                 <Save size={16} />
-                {isSaving ? 'Saving...' : 'Save Scan'}
+                {isSaving ? 'SAVING...' : 'SAVE LOG'}
               </button>
             )}
             <button
               onClick={handleClear}
-              className="flex items-center gap-2 px-4 py-2 bg-[#252526] hover:bg-[#2d2d2d] text-gray-300 border border-[#3c3c3c] rounded-lg transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-1.5 border border-cyber-border text-cyber-dark-text hover:text-cyber-text transition-colors text-sm uppercase tracking-widest"
             >
               <Trash2 size={16} />
-              Clear
+              CLEAR
             </button>
             <button
               onClick={handleScan}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-900/20"
+              className="flex items-center gap-2 px-6 py-1.5 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover transition-colors text-sm font-bold shadow-[0_0_15px_rgba(0,255,102,0.4)] uppercase tracking-widest"
             >
               <Play size={16} />
-              Scan Code
+              EXECUTE SCAN
             </button>
           </div>
         </div>
         
-        <div className="flex-1 rounded-xl overflow-hidden border border-[#3c3c3c] shadow-2xl">
+        <div className="flex-1 overflow-hidden relative">
           <Editor
             height="100%"
             language={getMonacoLanguage(language)}
@@ -174,61 +174,63 @@ export default function Scanner() {
             options={{
               minimap: { enabled: false },
               fontSize: 14,
+              fontFamily: "'JetBrains Mono', 'Space Mono', monospace",
               padding: { top: 16 },
               scrollBeyondLastLine: false,
+              overviewRulerBorder: false,
+              hideCursorInOverviewRuler: true
             }}
           />
         </div>
       </div>
 
       <div className="xl:w-1/3 flex flex-col h-full min-h-[500px]">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          Analysis Results
+        <h2 className="text-lg font-bold text-cyber-text mb-4 tracking-widest uppercase flex items-center gap-2 border-b border-cyber-border pb-2">
+          scan_results.log
           {hasScanned && (
-            <span className="text-sm font-normal px-2.5 py-0.5 bg-[#252526] border border-[#3c3c3c] rounded-full text-gray-400">
-              {results.length} found
+            <span className="text-xs font-normal px-2 py-0 border border-cyber-primary text-cyber-primary">
+              [{results.length} ENTRIES]
             </span>
           )}
         </h2>
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-4">
           {!hasScanned ? (
-            <div className="h-full flex flex-col items-center justify-center text-center text-gray-500 gap-4 border border-dashed border-[#3c3c3c] rounded-xl p-8 bg-[#252526]/50">
-              <ShieldAlert size={48} className="text-gray-600" />
-              <p>Run a scan to see vulnerability detection results here.</p>
+            <div className="h-full flex flex-col items-center justify-center text-center text-cyber-dark-text gap-4 border border-dashed border-cyber-border p-8 cyber-panel">
+              <ShieldAlert size={48} className="opacity-50" />
+              <p className="tracking-widest uppercase text-sm">System standing by.<br/>Execute scan to begin.</p>
             </div>
           ) : results.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center text-green-500 gap-4 border border-[#3c3c3c] rounded-xl p-8 bg-[#252526]">
-              <CheckCircle size={48} />
-              <h3 className="text-lg font-medium text-white">No vulnerabilities found!</h3>
-              <p className="text-green-500/80">Your code looks secure based on our checks.</p>
+            <div className="flex flex-col items-center justify-center text-center text-cyber-primary gap-4 border border-cyber-primary p-8 cyber-panel shadow-[inset_0_0_30px_rgba(0,255,102,0.05)]">
+              <CheckCircle size={48} className="glow-text" />
+              <h3 className="text-lg font-bold tracking-widest uppercase">System Secure</h3>
+              <p className="text-sm opacity-80">No vulnerabilities detected matching current heuristics.</p>
             </div>
           ) : (
             results.map((issue, idx) => (
-              <div key={idx} className="bg-[#252526] border border-[#3c3c3c] rounded-xl p-5 shadow-lg group hover:border-[#4d4d4d] transition-colors">
-                <div className="flex justify-between items-start mb-3">
+              <div key={idx} className="cyber-panel p-4 group hover:border-cyber-primary/50 transition-colors">
+                <div className="flex justify-between items-start mb-3 border-b border-cyber-border pb-2">
                   <div className="flex items-center gap-2">
-                    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${getSeverityColor(issue.severity)}`}>
+                    <span className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-bold uppercase tracking-wider border ${getSeverityColor(issue.severity)}`}>
                       {getSeverityIcon(issue.severity)}
-                      {issue.severity.toUpperCase()}
+                      {issue.severity}
                     </span>
-                    <span className="text-gray-400 text-sm font-mono">Line {issue.line}</span>
+                    <span className="text-cyber-dark-text text-sm">src:{issue.line}</span>
                   </div>
                   <button 
                     onClick={() => copyToClipboard(issue.codeSnippet)}
-                    className="text-gray-500 hover:text-white transition-colors"
-                    title="Copy vulnerable snippet"
+                    className="text-cyber-dark-text hover:text-cyber-primary transition-colors"
                   >
                     <Copy size={16} />
                   </button>
                 </div>
                 
-                <h3 className="text-white font-medium mb-1">{issue.type}</h3>
-                <p className="text-gray-400 text-sm mb-4 leading-relaxed">{issue.message}</p>
+                <h3 className="text-white font-bold mb-2 uppercase tracking-wide text-sm">{issue.type}</h3>
+                <p className="text-cyber-text text-sm mb-4 leading-relaxed opacity-80 glow-text">{issue.message}</p>
                 
-                <div className="bg-[#1e1e1e] p-3 rounded-lg border border-[#3c3c3c]">
-                  <div className="text-xs text-green-500 font-medium mb-1">Recommended Fix:</div>
-                  <p className="text-sm text-gray-300 font-mono">{issue.fix}</p>
+                <div className="bg-[#000] p-3 border border-cyber-border/50">
+                  <div className="text-xs text-cyber-primary font-bold mb-1 tracking-widest">>> PATCH_RECOMMENDATION:</div>
+                  <p className="text-sm text-cyber-text opacity-90">{issue.fix}</p>
                 </div>
               </div>
             ))

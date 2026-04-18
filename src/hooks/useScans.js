@@ -8,9 +8,9 @@ export function useScans() {
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
 
-  const fetchScans = useCallback(async () => {
+  const fetchScans = useCallback(async (silent = false) => {
     if (!currentUser) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const q = query(
         collection(db, 'scans'), 
@@ -25,7 +25,6 @@ export function useScans() {
       setScans(scansData);
     } catch (err) {
       console.error('Error fetching scans:', err);
-      // Fallback for missing compound index on first run
       if (err.message.includes('index')) {
         try {
           const qFallback = query(collection(db, 'scans'), where('userId', '==', currentUser.uid));
@@ -38,7 +37,7 @@ export function useScans() {
         }
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [currentUser]);
 
@@ -56,7 +55,20 @@ export function useScans() {
         issueCount: vulnerabilities.length,
         createdAt: serverTimestamp()
       });
-      await fetchScans();
+      // Optimistically push to local state to avoid latency
+      const newScan = {
+        id: docRef.id,
+        userId: currentUser.uid,
+        code,
+        vulnerabilities,
+        issueCount: vulnerabilities.length,
+        // Mock timestamp for immediate UI update until silent fetch completes
+        createdAt: { toMillis: () => Date.now() } 
+      };
+      setScans(prev => [newScan, ...prev]);
+      
+      // Silent fetch in background to sync true timestamps
+      fetchScans(true);
       return docRef.id;
     } catch (err) {
       console.error('Error saving scan:', err);

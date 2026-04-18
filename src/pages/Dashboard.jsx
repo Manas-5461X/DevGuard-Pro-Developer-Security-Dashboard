@@ -10,79 +10,88 @@ export default function Dashboard() {
   const stats = useMemo(() => getStats(), [scans, getStats]);
 
   if (loading) {
-    return <div className="text-white flex items-center justify-center p-8">Loading dashboard...</div>;
+    return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Initializing Dashboard...</div>;
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Welcome, {currentUser?.email?.split('@')[0]}</h1>
-        <p className="text-gray-400">Here's an overview of your code security posture.</p>
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="border-b border-cyber-border pb-4 mb-8">
+        <h1 className="text-2xl font-bold text-cyber-text tracking-widest mb-2 uppercase glow-text">SYS_ADMIN: {currentUser?.email?.split('@')[0]}</h1>
+        <p className="text-cyber-dark-text tracking-wider uppercase text-sm">Security posture overview initialized.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl p-6 shadow-xl relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 text-[#3c3c3c] group-hover:text-blue-500/20 transition-colors">
+        <div className="cyber-panel p-6 relative overflow-hidden group hover:border-cyber-primary transition-colors duration-300">
+          <div className="absolute -right-6 -top-6 text-cyber-border group-hover:text-cyber-primary/10 transition-colors">
             <History size={120} />
           </div>
           <div className="relative z-10">
-            <p className="text-gray-400 font-medium mb-1">Total Scans</p>
-            <h3 className="text-4xl font-bold text-white mb-2">{stats.totalScans}</h3>
-            <p className="text-sm text-blue-400 font-medium">Recorded in history</p>
+            <p className="text-cyber-dark-text tracking-widest text-xs uppercase mb-1">Total Scans Executed</p>
+            <h3 className="text-5xl font-bold text-cyber-primary mb-2 glow-text">{stats.totalScans}</h3>
+            <p className="text-xs text-cyber-text tracking-widest uppercase opacity-70">Recorded in history</p>
           </div>
         </div>
 
-        <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl p-6 shadow-xl relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 text-[#3c3c3c] group-hover:text-yellow-500/20 transition-colors">
+        <div className="cyber-panel p-6 relative overflow-hidden group hover:border-[#ffcc00] transition-colors duration-300">
+          <div className="absolute -right-6 -top-6 text-cyber-border group-hover:text-[#ffcc00]/10 transition-colors">
             <FileCode2 size={120} />
           </div>
           <div className="relative z-10">
-            <p className="text-gray-400 font-medium mb-1">Total Issues Found</p>
-            <h3 className="text-4xl font-bold text-white mb-2">{stats.totalIssues}</h3>
-            <p className="text-sm text-yellow-400 font-medium">Across all scans</p>
+            <p className="text-cyber-dark-text tracking-widest text-xs uppercase mb-1">Total Issues Detected</p>
+            <h3 className="text-5xl font-bold text-[#ffcc00] mb-2" style={{textShadow: '0 0 10px rgba(255,204,0,0.4)'}}>{stats.totalIssues}</h3>
+            <p className="text-xs text-cyber-text tracking-widest uppercase opacity-70">Across all runs</p>
           </div>
         </div>
 
-        <div className="bg-[#252526] border border-red-500/30 rounded-xl p-6 shadow-xl relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 text-[#3c3c3c] group-hover:text-red-500/20 transition-colors">
+        <div className="cyber-panel p-6 border-cyber-error/30 relative overflow-hidden group hover:border-cyber-error transition-colors duration-300">
+          <div className="absolute -right-6 -top-6 text-cyber-border group-hover:text-cyber-error/10 transition-colors">
             <ShieldAlert size={120} />
           </div>
           <div className="relative z-10">
-            <p className="text-red-400 font-medium mb-1">Critical Vulnerabilities</p>
-            <h3 className="text-4xl font-bold text-white mb-2">{stats.criticalIssues}</h3>
-            <p className="text-sm text-red-500 font-medium">Requires immediate action</p>
+            <p className="text-cyber-error tracking-widest text-xs uppercase mb-1">Critical Violations</p>
+            <h3 className="text-5xl font-bold text-cyber-error mb-2" style={{textShadow: '0 0 10px rgba(255,51,102,0.4)'}}>{stats.criticalIssues}</h3>
+            <p className="text-xs text-cyber-error tracking-widest uppercase opacity-80">Immediate action required</p>
           </div>
         </div>
       </div>
 
-      <div className="mt-8 pt-8 border-t border-[#3c3c3c]">
-        <h2 className="text-xl font-bold text-white mb-4">Recent Scans</h2>
+      <div className="mt-12">
+        <h2 className="text-lg font-bold text-cyber-text mb-4 uppercase tracking-widest border-b border-cyber-border pb-2 flex items-center justify-between">
+          <span>Recent_Executions.log</span>
+          <span className="text-xs font-normal border border-cyber-primary text-cyber-primary px-2 py-0.5">AUTO</span>
+        </h2>
         {scans.length === 0 ? (
-           <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl p-8 text-center">
-             <p className="text-gray-400">No scans found. Navigate to the Scanner to get started.</p>
+           <div className="cyber-panel p-8 text-center border-dashed border-cyber-border opacity-70">
+             <p className="text-cyber-dark-text uppercase tracking-widest text-sm">No recorded executions found. Access scanner to initialize.</p>
            </div>
         ) : (
-          <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl overflow-hidden shadow-xl">
-            <table className="w-full text-left">
-              <thead className="bg-[#1e1e1e] text-gray-400">
+          <div className="cyber-panel overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-[#0a0f0d] text-cyber-dark-text text-xs uppercase tracking-widest border-b border-cyber-border">
                 <tr>
-                  <th className="font-medium p-4 border-b border-[#3c3c3c]">Date</th>
-                  <th className="font-medium p-4 border-b border-[#3c3c3c]">Issues Found</th>
-                  <th className="font-medium p-4 border-b border-[#3c3c3c]">Status</th>
+                  <th className="font-bold p-4">Timestamp</th>
+                  <th className="font-bold p-4 text-center">Flags</th>
+                  <th className="font-bold p-4">Sys Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#3c3c3c]">
+              <tbody className="divide-y divide-cyber-border/50 text-sm">
                 {scans.slice(0, 5).map(scan => (
-                  <tr key={scan.id} className="hover:bg-[#2a2a2b] transition-colors">
-                    <td className="p-4 text-gray-300">
-                      {scan.createdAt ? new Date(scan.createdAt.toMillis()).toLocaleString() : 'Just now'}
+                  <tr key={scan.id} className="hover:bg-cyber-primary/5 transition-colors">
+                    <td className="p-4 text-cyber-text opacity-90">
+                      {scan.createdAt ? new Date(scan.createdAt.toMillis()).toLocaleString() : 'JUST NOW'}
                     </td>
-                    <td className="p-4 text-white font-medium">{scan.issueCount}</td>
+                    <td className="p-4 text-white font-bold text-center">
+                      {scan.issueCount > 0 ? (
+                        <span className="text-cyber-warning">{scan.issueCount}</span>
+                      ) : (
+                        <span className="text-cyber-dark-text">0</span>
+                      )}
+                    </td>
                     <td className="p-4">
                       {scan.issueCount > 0 ? (
-                        <span className="px-2.5 py-1 bg-red-500/10 text-red-500 font-semibold rounded-full text-xs">Vulnerable</span>
+                        <span className="border border-cyber-error text-cyber-error uppercase tracking-widest text-xs px-2 py-1 font-bold">Vulnerable</span>
                       ) : (
-                        <span className="px-2.5 py-1 bg-green-500/10 text-green-500 font-semibold rounded-full text-xs">Secure</span>
+                        <span className="border border-cyber-primary text-cyber-primary uppercase tracking-widest text-xs px-2 py-1 font-bold">Secure</span>
                       )}
                     </td>
                   </tr>

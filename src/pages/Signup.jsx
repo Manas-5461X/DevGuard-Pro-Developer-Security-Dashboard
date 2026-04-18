@@ -52,8 +52,8 @@ export default function Signup() {
             <Shield className="text-cyber-primary glow-text" size={48} />
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-white text-center mb-2 tracking-widest uppercase glow-text">INIT_ACCOUNT</h2>
-        <p className="text-center text-cyber-dark-text tracking-widest text-sm mb-8 uppercase">Create your DevGuard Pro identity</p>
+        <h2 className="text-2xl font-bold text-white text-center mb-2 tracking-widest uppercase glow-text">Create Account</h2>
+        <p className="text-center text-cyber-dark-text tracking-widest text-sm mb-8 uppercase">Join DevGuard Pro today</p>
         
         {error && (
           <div className="bg-cyber-error/10 border border-cyber-error text-cyber-error p-3 text-sm text-center font-bold tracking-widest uppercase mb-6">
@@ -63,7 +63,7 @@ export default function Signup() {
 
         <form onSubmit={handleSubmit} className="space-y-5 mb-8">
           <div>
-            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">SYS_UID (EMAIL)</label>
+            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">Email</label>
             <input 
               type="email" 
               required
@@ -73,7 +73,7 @@ export default function Signup() {
             />
           </div>
           <div>
-            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">ACCESS_KEY (PASSWORD)</label>
+            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">Password</label>
             <input 
               type="password" 
               required
@@ -83,7 +83,7 @@ export default function Signup() {
             />
           </div>
           <div>
-            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">VERIFY_KEY</label>
+            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">Confirm Password</label>
             <input 
               type="password" 
               required
@@ -97,13 +97,13 @@ export default function Signup() {
             type="submit"
             className="w-full bg-cyber-primary text-[#000] font-bold py-3 hover:bg-cyber-primary-hover transition-colors mt-6 uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,102,0.2)] disabled:opacity-50"
           >
-            {loading ? 'GENERATING...' : 'CREATE IDENTITY'}
+            {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 
         <div className="flex items-center mb-6">
           <div className="flex-grow border-t border-cyber-border"></div>
-          <span className="px-4 text-cyber-dark-text text-xs tracking-widest uppercase font-bold">OR_USE_SSO</span>
+          <span className="px-4 text-cyber-dark-text text-xs tracking-widest uppercase font-bold">or sign up with</span>
           <div className="flex-grow border-t border-cyber-border"></div>
         </div>
 
@@ -134,7 +134,7 @@ export default function Signup() {
         </div>
 
         <p className="text-center text-cyber-dark-text mt-8 text-xs tracking-widest uppercase">
-          ALREADY_AUTHORIZED? <Link to="/login" className="text-cyber-primary hover:text-white border-b border-cyber-primary ml-2">LOGIN</Link>
+          Already have an account? <Link to="/login" className="text-cyber-primary hover:text-white border-b border-cyber-primary ml-2">Log in</Link>
         </p>
       </div>
     </div>

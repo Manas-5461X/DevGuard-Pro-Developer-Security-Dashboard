@@ -10,14 +10,14 @@ export default function Dashboard() {
   const stats = useMemo(() => getStats(), [scans, getStats]);
 
   if (loading) {
-    return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Initializing Dashboard...</div>;
+    return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Loading dashboard...</div>;
   }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div className="border-b border-cyber-border pb-4 mb-8">
-        <h1 className="text-2xl font-bold text-cyber-text tracking-widest mb-2 uppercase glow-text">SYS_ADMIN: {currentUser?.email?.split('@')[0]}</h1>
-        <p className="text-cyber-dark-text tracking-wider uppercase text-sm">Security posture overview initialized.</p>
+        <h1 className="text-2xl font-bold text-cyber-text tracking-widest mb-2 uppercase glow-text">Welcome, {currentUser?.email?.split('@')[0]}</h1>
+        <p className="text-cyber-dark-text tracking-wider uppercase text-sm">Security posture overview.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
@@ -57,21 +57,20 @@ export default function Dashboard() {
 
       <div className="mt-12">
         <h2 className="text-lg font-bold text-cyber-text mb-4 uppercase tracking-widest border-b border-cyber-border pb-2 flex items-center justify-between">
-          <span>Recent_Executions.log</span>
-          <span className="text-xs font-normal border border-cyber-primary text-cyber-primary px-2 py-0.5">AUTO</span>
+          <span>Recent Scans</span>
         </h2>
         {scans.length === 0 ? (
            <div className="cyber-panel p-8 text-center border-dashed border-cyber-border opacity-70">
-             <p className="text-cyber-dark-text uppercase tracking-widest text-sm">No recorded executions found. Access scanner to initialize.</p>
+             <p className="text-cyber-dark-text uppercase tracking-widest text-sm">No scans found. Navigate to the Scanner to get started.</p>
            </div>
         ) : (
           <div className="cyber-panel overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead className="bg-[#0a0f0d] text-cyber-dark-text text-xs uppercase tracking-widest border-b border-cyber-border">
                 <tr>
-                  <th className="font-bold p-4">Timestamp</th>
-                  <th className="font-bold p-4 text-center">Flags</th>
-                  <th className="font-bold p-4">Sys Status</th>
+                  <th className="font-bold p-4">Date</th>
+                  <th className="font-bold p-4 text-center">Issues Found</th>
+                  <th className="font-bold p-4">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cyber-border/50 text-sm">

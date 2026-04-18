@@ -110,7 +110,7 @@ export default function Scanner() {
           <div className="flex items-center gap-3">
             <h2 className="text-cyber-text font-bold text-sm tracking-widest flex items-center gap-2 uppercase">
               <Code2 size={16} className="text-cyber-primary glow-text" />
-              Terminal Workspace
+              Workspace
             </h2>
             <div className="h-4 w-px bg-cyber-border"></div>
             <select 
@@ -144,7 +144,7 @@ export default function Scanner() {
                 className="flex items-center gap-2 px-4 py-1.5 border border-cyber-primary text-cyber-primary hover:bg-cyber-primary/10 transition-colors text-sm uppercase tracking-widest disabled:opacity-50"
               >
                 <Save size={16} />
-                {isSaving ? 'SAVING...' : 'SAVE LOG'}
+                {isSaving ? 'Saving...' : 'Save Scan'}
               </button>
             )}
             <button
@@ -159,7 +159,7 @@ export default function Scanner() {
               className="flex items-center gap-2 px-6 py-1.5 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover transition-colors text-sm font-bold shadow-[0_0_15px_rgba(0,255,102,0.4)] uppercase tracking-widest"
             >
               <Play size={16} />
-              EXECUTE SCAN
+              Run Scan
             </button>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function Scanner() {
 
       <div className="xl:w-1/3 flex flex-col h-full min-h-[500px]">
         <h2 className="text-lg font-bold text-cyber-text mb-4 tracking-widest uppercase flex items-center gap-2 border-b border-cyber-border pb-2">
-          scan_results.log
+          Analysis Results
           {hasScanned && (
             <span className="text-xs font-normal px-2 py-0 border border-cyber-primary text-cyber-primary">
               [{results.length} ENTRIES]
@@ -198,7 +198,7 @@ export default function Scanner() {
           {!hasScanned ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-cyber-dark-text gap-4 border border-dashed border-cyber-border p-8 cyber-panel">
               <ShieldAlert size={48} className="opacity-50" />
-              <p className="tracking-widest uppercase text-sm">System standing by.<br/>Execute scan to begin.</p>
+              <p className="tracking-widest uppercase text-sm">Ready to scan.<br/>Run a scan to see results here.</p>
             </div>
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-cyber-primary gap-4 border border-cyber-primary p-8 cyber-panel shadow-[inset_0_0_30px_rgba(0,255,102,0.05)]">
@@ -229,7 +229,7 @@ export default function Scanner() {
                 <p className="text-cyber-text text-sm mb-4 leading-relaxed opacity-80 glow-text">{issue.message}</p>
                 
                 <div className="bg-[#000] p-3 border border-cyber-border/50">
-                  <div className="text-xs text-cyber-primary font-bold mb-1 tracking-widest">>> PATCH_RECOMMENDATION:</div>
+                  <div className="text-xs text-cyber-primary font-bold mb-1 tracking-widest">Recommended Fix:</div>
                   <p className="text-sm text-cyber-text opacity-90">{issue.fix}</p>
                 </div>
               </div>

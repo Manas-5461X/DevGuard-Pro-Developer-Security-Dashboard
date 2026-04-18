@@ -48,8 +48,8 @@ export default function Login() {
             <Shield className="text-cyber-primary glow-text" size={48} />
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-white text-center mb-2 tracking-widest uppercase glow-text">SYS_AUTH REQUIRED</h2>
-        <p className="text-center text-cyber-dark-text tracking-widest text-sm mb-8 uppercase">Authenticate to access DevGuard Pro</p>
+        <h2 className="text-2xl font-bold text-white text-center mb-2 tracking-widest uppercase glow-text">Welcome Back</h2>
+        <p className="text-center text-cyber-dark-text tracking-widest text-sm mb-8 uppercase">Sign in to access DevGuard Pro</p>
         
         {error && (
           <div className="bg-cyber-error/10 border border-cyber-error text-cyber-error p-3 text-sm text-center font-bold tracking-widest uppercase mb-6">
@@ -59,7 +59,7 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-5 mb-8">
           <div>
-            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">SYS_UID (EMAIL)</label>
+            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">Email</label>
             <input 
               type="email" 
               required
@@ -69,7 +69,7 @@ export default function Login() {
             />
           </div>
           <div>
-            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">ACCESS_KEY (PASSWORD)</label>
+            <label className="block text-cyber-dark-text text-sm font-bold mb-2 tracking-widest uppercase">Password</label>
             <input 
               type="password" 
               required
@@ -83,13 +83,13 @@ export default function Login() {
             type="submit"
             className="w-full bg-cyber-primary text-[#000] font-bold py-3 hover:bg-cyber-primary-hover transition-colors mt-6 uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,102,0.2)] disabled:opacity-50"
           >
-            {loading ? 'AUTHENTICATING...' : 'INITIALIZE LOGIN'}
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
         <div className="flex items-center mb-6">
           <div className="flex-grow border-t border-cyber-border"></div>
-          <span className="px-4 text-cyber-dark-text text-xs tracking-widest uppercase font-bold">OR_USE_SSO</span>
+          <span className="px-4 text-cyber-dark-text text-xs tracking-widest uppercase font-bold">or continue with</span>
           <div className="flex-grow border-t border-cyber-border"></div>
         </div>
 
@@ -120,7 +120,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-cyber-dark-text mt-8 text-xs tracking-widest uppercase">
-          UNAUTHORIZED? <Link to="/signup" className="text-cyber-primary hover:text-white border-b border-cyber-primary ml-2">REQ_ACCESS</Link>
+          Don't have an account? <Link to="/signup" className="text-cyber-primary hover:text-white border-b border-cyber-primary ml-2">Sign up</Link>
         </p>
       </div>
     </div>

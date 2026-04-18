@@ -18,13 +18,13 @@ export default function History() {
   };
 
   if (loading) {
-    return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Initializing historical records...</div>;
+    return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Loading history...</div>;
   }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto h-full flex flex-col">
       <div className="border-b border-cyber-border pb-4 mb-4">
-        <h1 className="text-2xl font-bold text-cyber-text tracking-widest mb-2 uppercase glow-text">EXECUTION_HISTORY.LOG</h1>
+        <h1 className="text-2xl font-bold text-cyber-text tracking-widest mb-2 uppercase glow-text">Scan History</h1>
         <p className="text-cyber-dark-text tracking-wider uppercase text-sm">Archived vulnerability reports and system scans.</p>
       </div>
 
@@ -50,14 +50,14 @@ export default function History() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-cyber-dark-text tracking-widest uppercase mb-1">SYS_STATUS</p>
+                      <p className="text-xs font-bold text-cyber-dark-text tracking-widest uppercase mb-1">Status</p>
                       {scan.issueCount > 0 ? (
                         <span className="flex items-center gap-1.5 text-cyber-error font-bold uppercase tracking-widest text-sm">
-                          <AlertTriangle size={16} /> {scan.issueCount} FLAGS
+                          <AlertTriangle size={16} /> {scan.issueCount} Issues
                         </span>
                       ) : (
                         <span className="flex items-center gap-1.5 text-cyber-primary font-bold uppercase tracking-widest text-sm">
-                          <CheckCircle size={16} /> SECURE
+                          <CheckCircle size={16} /> Secure
                         </span>
                       )}
                     </div>
@@ -78,7 +78,7 @@ export default function History() {
                 
                 {expandedScan === scan.id && scan.vulnerabilities?.length > 0 && (
                   <div className="p-5 border-t border-cyber-border bg-[#0a0f0d]">
-                    <h3 className="text-cyber-primary font-bold tracking-widest uppercase mb-4 text-sm">>> DETAILED_VULNERABILITY_REPORT:</h3>
+                    <h3 className="text-cyber-primary font-bold tracking-widest uppercase mb-4 text-sm">Vulnerability Report</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {scan.vulnerabilities.map((v, i) => (
                          <div key={i} className="bg-[#141b18] p-4 border border-cyber-error/50 hover:border-cyber-error transition-colors">

@@ -2,14 +2,30 @@ import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { analyzeCode } from '../utils/analyzer';
 import { useScans } from '../hooks/useScans';
-import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Save } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Save, Code2 } from 'lucide-react';
+
+const DEFAULT_CODE = {
+  javascript: '// Paste your JavaScript code here\n\nconst API_KEY = "12345678901234";\ndocument.write("Hello User");\n',
+  python: '# Paste your Python code here\n\nimport sqlite3\nconn = sqlite3.connect("users.db")\npassword = "supersecretpassword"\nquery = "SELECT * FROM users WHERE root = " + user_input\n',
+  java: '// Paste your Java code here\n\nString AWS_SECRET = "AKIAIOSFODNN7EXAMPLE";\nStatement statement = connection.createStatement();\nResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE name = \'" + userName + "\'");\n',
+  php: '<?php\n// Paste your PHP code here\n$secret = "my_database_password";\necho "Hello " . $_GET["name"];\n?>'
+};
 
 export default function Scanner() {
-  const [code, setCode] = useState('// Paste or write your JavaScript code here\n\nconst API_KEY = "12345678901234";\ndocument.write("Hello User");\n');
+  const [language, setLanguage] = useState('javascript');
+  const [code, setCode] = useState(DEFAULT_CODE['javascript']);
   const [results, setResults] = useState([]);
   const [hasScanned, setHasScanned] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { saveScan } = useScans();
+
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang);
+    setCode(DEFAULT_CODE[newLang]);
+    setResults([]);
+    setHasScanned(false);
+  };
 
   const handleScan = () => {
     const findings = analyzeCode(code);
@@ -18,7 +34,7 @@ export default function Scanner() {
   };
 
   const handleClear = () => {
-    setCode('// Paste or write your JavaScript code here\n');
+    setCode(DEFAULT_CODE[language]);
     setResults([]);
     setHasScanned(false);
   };
@@ -60,18 +76,33 @@ export default function Scanner() {
   };
 
   return (
-    <div className="h-full flex flex-col xl:flex-row gap-6">
-      <div className="flex-1 flex flex-col h-full min-h-[500px]">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            Workspace
-          </h2>
+    <div className="h-[calc(100vh-6rem)] flex gap-6">
+      {/* Editor Section */}
+      <div className="flex-1 flex flex-col bg-[#1e1e1e] rounded-xl border border-[#3c3c3c] overflow-hidden shadow-2xl">
+        <div className="h-12 bg-[#252526] border-b border-[#3c3c3c] flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-gray-300 font-medium text-sm flex items-center gap-2">
+              <Code2 size={16} />
+              Workspace
+            </h2>
+            <div className="h-4 w-px bg-[#3c3c3c]"></div>
+            <select 
+              value={language}
+              onChange={handleLanguageChange}
+              className="bg-[#1e1e1e] text-gray-300 text-sm border border-[#3c3c3c] rounded px-2 py-1 outline-none focus:border-blue-500 transition-colors"
+            >
+              <option value="javascript">JavaScript / TypeScript</option>
+              <option value="python">Python</option>
+              <option value="java">Java / C#</option>
+              <option value="php">PHP</option>
+            </select>
+          </div>
           <div className="flex gap-3">
             {hasScanned && (
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-[#252526] hover:bg-[#2d2d2d] text-green-500 border border-green-500/30 hover:border-green-500/60 rounded-lg transition-colors text-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-1.5 bg-[#252526] hover:bg-[#2d2d2d] text-green-500 border border-green-500/30 hover:border-green-500/60 rounded-lg transition-colors text-sm disabled:opacity-50"
               >
                 <Save size={16} />
                 {isSaving ? 'Saving...' : 'Save Scan'}
@@ -97,7 +128,7 @@ export default function Scanner() {
         <div className="flex-1 rounded-xl overflow-hidden border border-[#3c3c3c] shadow-2xl">
           <Editor
             height="100%"
-            defaultLanguage="javascript"
+            language={language}
             theme="vs-dark"
             value={code}
             onChange={(value) => setCode(value || '')}

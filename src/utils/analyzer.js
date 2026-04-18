@@ -82,6 +82,30 @@ export function analyzeCode(code) {
       severity: 'high',
       message: 'Directly injecting unsanitized URL parameters into the DOM.',
       fix: 'Sanitize URL parameters before altering the DOM or use textContent.'
+    },
+    {
+      id: 'sql-injection-concat',
+      pattern: /(?:SELECT|UPDATE|DELETE|INSERT).*(?:WHERE|VALUES).*(?:\s*\+\s*[a-zA-Z0-9_$.]+|\$\{[^}]+\})/i,
+      type: 'SQL Injection',
+      severity: 'critical',
+      message: 'String concatenation or interpolation detected in SQL query. Vulnerable to SQL injection.',
+      fix: 'Use parameterized queries or prepared statements.'
+    },
+    {
+      id: 'command-injection',
+      pattern: /(?:exec|system|popen|subprocess\.run|shell_exec|Runtime\.getRuntime\(\)\.exec)\s*\((?![^)]*['"][a-zA-Z0-9_/-]*['"]\s*\)).*(?:\+|%s|\$|\{)/i,
+      type: 'Command Injection',
+      severity: 'critical',
+      message: 'Dynamically constructed OS command detected. Vulnerable to command injection.',
+      fix: 'Use specific API methods or safely escape all user input provided to OS commands.'
+    },
+    {
+      id: 'insecure-deserialization',
+      pattern: /(?:pickle\.loads|yaml\.load|ObjectInputStream|unserialize\s*\()/i,
+      type: 'Insecure Deserialization',
+      severity: 'high',
+      message: 'Reading serialized objects from untrusted sources can lead to remote code execution.',
+      fix: 'Validate signatures of serialized streams or use safer data formats like JSON.'
     }
   ];
 

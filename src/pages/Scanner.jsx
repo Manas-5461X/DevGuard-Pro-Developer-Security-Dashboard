@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { analyzeCode } from '../utils/analyzer';
-import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2 } from 'lucide-react';
+import { useScans } from '../hooks/useScans';
+import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Save } from 'lucide-react';
 
 export default function Scanner() {
   const [code, setCode] = useState('// Paste or write your JavaScript code here\n\nconst API_KEY = "12345678901234";\ndocument.write("Hello User");\n');
   const [results, setResults] = useState([]);
   const [hasScanned, setHasScanned] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { saveScan } = useScans();
 
   const handleScan = () => {
     const findings = analyzeCode(code);
@@ -18,6 +21,18 @@ export default function Scanner() {
     setCode('// Paste or write your JavaScript code here\n');
     setResults([]);
     setHasScanned(false);
+  };
+
+  const handleSave = async () => {
+    if (!hasScanned) return;
+    setIsSaving(true);
+    try {
+      await saveScan(code, results);
+      alert('Scan saved successfully to your history.');
+    } catch (err) {
+      alert('Failed to save scan.');
+    }
+    setIsSaving(false);
   };
 
   const copyToClipboard = (text) => {
@@ -52,6 +67,16 @@ export default function Scanner() {
             Workspace
           </h2>
           <div className="flex gap-3">
+            {hasScanned && (
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-4 py-2 bg-[#252526] hover:bg-[#2d2d2d] text-green-500 border border-green-500/30 hover:border-green-500/60 rounded-lg transition-colors text-sm disabled:opacity-50"
+              >
+                <Save size={16} />
+                {isSaving ? 'Saving...' : 'Save Scan'}
+              </button>
+            )}
             <button
               onClick={handleClear}
               className="flex items-center gap-2 px-4 py-2 bg-[#252526] hover:bg-[#2d2d2d] text-gray-300 border border-[#3c3c3c] rounded-lg transition-colors text-sm"

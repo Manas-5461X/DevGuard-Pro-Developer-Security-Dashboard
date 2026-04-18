@@ -124,12 +124,20 @@ export function analyzeCode(code) {
       fix: 'Ensure the data passed to the bypass function is 100% strictly validated.'
     },
     {
-       id: 'shell-unquoted-variables',
-       pattern: /rm\s+-r?[f]*\s+\$[a-zA-Z0-9_]+/i,
-       type: 'Dangerous Command execution',
+       id: 'destructive-command',
+       pattern: /rm\s+-r?[f]*\s+(?:\/|\.\/?\w*\*?|\*|\$[a-zA-Z0-9_]+)/i,
+       type: 'Destructive Command Execution',
        severity: 'critical',
-       message: 'Unquoted variable passed to destructive command (like rm -rf).',
-       fix: 'Double quote the variable (e.g., "$VAR") or validate path boundaries.'
+       message: 'Highly destructive command detected (e.g. rm -rf on root, wildcard, or unquoted variable).',
+       fix: 'Remove this command or strictly validate the target path to prevent automated data loss.'
+    },
+    {
+       id: 'remote-shell-execution',
+       pattern: /(?:curl|wget).*\|\s*(?:bash|sh|zsh)/i,
+       type: 'Arbitrary Remote Execution',
+       severity: 'critical',
+       message: 'Piping remote scripts directly into a shell allows total system compromise.',
+       fix: 'Download the script, audit its contents manually, and execute locally.'
     },
     {
        id: 'cpp-buffer-overflow',

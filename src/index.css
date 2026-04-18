@@ -51,27 +51,5 @@
 }
 
 .cyber-panel {
-  @apply bg-cyber-surface border border-cyber-border relative;
-}
-
-.cyber-panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  border-top: 1px solid var(--color-cyber-primary);
-  border-left: 1px solid var(--color-cyber-primary);
-}
-
-.cyber-panel::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 8px;
-  height: 8px;
-  border-bottom: 1px solid var(--color-cyber-primary);
-  border-right: 1px solid var(--color-cyber-primary);
+  @apply bg-cyber-surface border border-cyber-border rounded-lg shadow-lg relative;
 }

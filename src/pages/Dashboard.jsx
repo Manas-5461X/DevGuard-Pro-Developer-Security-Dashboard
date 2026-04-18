@@ -22,8 +22,8 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <div className="cyber-panel p-6 relative overflow-hidden group hover:border-cyber-primary transition-colors duration-300">
-          <div className="absolute -right-6 -top-6 text-cyber-border group-hover:text-cyber-primary/10 transition-colors">
-            <History size={120} />
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-cyber-border group-hover:text-cyber-primary/10 transition-colors opacity-40 group-hover:opacity-100">
+            <History size={72} />
           </div>
           <div className="relative z-10">
             <p className="text-cyber-dark-text tracking-widest text-xs uppercase mb-1">Total Scans Executed</p>
@@ -33,8 +33,8 @@ export default function Dashboard() {
         </div>
 
         <div className="cyber-panel p-6 relative overflow-hidden group hover:border-[#ffcc00] transition-colors duration-300">
-          <div className="absolute -right-6 -top-6 text-cyber-border group-hover:text-[#ffcc00]/10 transition-colors">
-            <FileCode2 size={120} />
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-cyber-border group-hover:text-[#ffcc00]/10 transition-colors opacity-40 group-hover:opacity-100">
+            <FileCode2 size={72} />
           </div>
           <div className="relative z-10">
             <p className="text-cyber-dark-text tracking-widest text-xs uppercase mb-1">Total Issues Detected</p>
@@ -44,8 +44,8 @@ export default function Dashboard() {
         </div>
 
         <div className="cyber-panel p-6 border-cyber-error/30 relative overflow-hidden group hover:border-cyber-error transition-colors duration-300">
-          <div className="absolute -right-6 -top-6 text-cyber-border group-hover:text-cyber-error/10 transition-colors">
-            <ShieldAlert size={120} />
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-cyber-border group-hover:text-cyber-error/10 transition-colors opacity-40 group-hover:opacity-100">
+            <ShieldAlert size={72} />
           </div>
           <div className="relative z-10">
             <p className="text-cyber-error tracking-widest text-xs uppercase mb-1">Critical Violations</p>

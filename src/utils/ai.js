@@ -53,8 +53,8 @@ Return ONLY the JSON.`;
       const err = await response.json();
       let errorMessage = err.error?.message || 'Failed to communicate with Gemini API';
       
-      if (errorMessage.toLowerCase().includes('quota')) {
-        errorMessage = 'Quota Exceeded: You have hit the rate limit for the free Gemini tier (15 requests per minute). Please wait 60 seconds and try again.';
+      if (errorMessage.toLowerCase().includes('quota') || response.status === 429) {
+        errorMessage = 'Quota Exceeded: Google AI Studio restricts free-tier keys (frequently limiting fresh accounts to just 2-15 requests per minute). Please wait 60 seconds and try again.';
       }
       
       throw new Error(errorMessage);

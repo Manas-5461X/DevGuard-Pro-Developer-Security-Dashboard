@@ -9,17 +9,21 @@ export async function analyzeWithGemini(code, vulnerabilities) {
     `- Line ${v.line}: ${v.type} (${v.severity}). Issue: ${v.message}. Recommended Fix: ${v.fix}`
   ).join('\n');
 
-  const systemPrompt = `You are an elite DevSecOps automated code remediation engine.
+  const systemPrompt = `You are an elite DevSecOps code remediation engine.
 The user will provide their source code along with a list of security vulnerabilities detected by a static analyzer.
-Your task is to fix ALL the vulnerabilities in the provided code by applying the recommended fixes securely.
+Your task is to analyze the vulnerabilities and provide a completely fixed version of the code.
 
 CRITICALLY IMPORTANT INSTRUCTIONS:
-- You must output ONLY the complete, corrected source code.
-- DO NOT wrap the code in markdown code blocks like \`\`\`javascript or \`\`\`.
-- DO NOT output any conversational text, explanations, or greetings.
-- The output must be EXACTLY the raw code as it will be injected directly into a Diff Editor.
-- Preserve the original formatting, indentation, and structure of the code around the fixes.
-- If the original code is in a specific language, write the fixes in that exact language.`;
+The user has requested that responseMimeType is application/json.
+- The JSON object must have exactly two keys: "analysis" and "fixedCode".
+- "analysis" should be a concise 2-3 sentence explanation of the vulnerabilities found and the strategy you used to fix them.
+- "fixedCode" must be the exact raw complete source code with the fixes securely applied. Do NOT escape the fixedCode incorrectly, it should be a raw valid string.
+
+schema:
+{
+  "analysis": "...",
+  "fixedCode": "..."
+}`;
 
   const userPrompt = `ORIGINAL CODE:
 ${code}
@@ -27,7 +31,7 @@ ${code}
 VULNERABILITIES DETECTED:
 ${issueList}
 
-Return ONLY the raw fixed code.`;
+Return ONLY the JSON.`;
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
@@ -38,7 +42,10 @@ Return ONLY the raw fixed code.`;
       body: JSON.stringify({
         contents: [{
           parts: [{ text: systemPrompt + '\n\n' + userPrompt }]
-        }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
       })
     });
 
@@ -56,12 +63,18 @@ Return ONLY the raw fixed code.`;
     const data = await response.json();
     let textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    // Fallback: forcefully strip markdown blocks if the model ignored instructions
-    textOutput = textOutput.replace(/^\`\`\`[a-z]*\n/gi, '').replace(/\n\`\`\`$/g, '');
+    // Safety fallback strip just in case model ignores mimeType constraint occasionally
+    textOutput = textOutput.replace(/^\s*\`\`\`(?:json)?\n?/i, '').replace(/\n?\`\`\`\s*$/i, '');
     
-    return textOutput;
+    const result = JSON.parse(textOutput);
+    
+    if (!result.analysis || !result.fixedCode) {
+       throw new Error("AI returned malformed data schema.");
+    }
+    
+    return result;
   } catch (error) {
     console.error('Gemini Remediation Error:', error);
-    throw error;
+    throw new Error(error.message.includes('Unexpected token') ? 'AI failed to format response correctly. Please try again.' : error.message);
   }
 }

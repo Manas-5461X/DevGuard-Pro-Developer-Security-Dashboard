@@ -33,9 +33,12 @@ export default function Scanner() {
   // AI and History States
   const [currentScanId, setCurrentScanId] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [aiSuggestedCode, setAiSuggestedCode] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState(null);
+  
+  // Refactored Multi-Stage AI States
+  const [aiResult, setAiResult] = useState(null); // { analysis: string, fixedCode: string }
+  const [showDiff, setShowDiff] = useState(false);
 
   const { saveScan, toggleBookmark } = useScans();
 
@@ -58,9 +61,14 @@ export default function Scanner() {
     const newLang = e.target.value;
     setLanguage(newLang);
     setCode(DEFAULT_CODE[newLang]);
+    resetScanState();
+  };
+
+  const resetScanState = () => {
     setResults([]);
     setHasScanned(false);
-    setAiSuggestedCode(null);
+    setAiResult(null);
+    setShowDiff(false);
     setCurrentScanId(null);
     setIsBookmarked(false);
     setAiError(null);
@@ -70,7 +78,8 @@ export default function Scanner() {
     const findings = analyzeCode(code);
     setResults(findings);
     setHasScanned(true);
-    setAiSuggestedCode(null);
+    setAiResult(null);
+    setShowDiff(false);
     setIsBookmarked(false);
     setAiError(null);
     
@@ -89,11 +98,7 @@ export default function Scanner() {
 
   const handleClear = () => {
     setCode(DEFAULT_CODE[language]);
-    setResults([]);
-    setHasScanned(false);
-    setAiSuggestedCode(null);
-    setCurrentScanId(null);
-    setIsBookmarked(false);
+    resetScanState();
   };
 
   const handleBookmarkToggle = async () => {
@@ -111,24 +116,26 @@ export default function Scanner() {
     setIsAnalyzing(true);
     setAiError(null);
     try {
-      const fixedCode = await analyzeWithGemini(code, results);
-      setAiSuggestedCode(fixedCode);
+      const response = await analyzeWithGemini(code, results);
+      setAiResult(response);
     } catch (err) {
       setAiError(err.message);
     }
     setIsAnalyzing(false);
   };
 
+  const handleReviewFix = () => {
+    setShowDiff(true);
+  };
+
   const handleAcceptFix = () => {
-    setCode(aiSuggestedCode);
-    setAiSuggestedCode(null);
-    setResults([]);
-    setHasScanned(false);
-    setCurrentScanId(null);
+    setCode(aiResult.fixedCode);
+    resetScanState();
   };
 
   const handleRejectFix = () => {
-    setAiSuggestedCode(null);
+    setAiResult(null);
+    setShowDiff(false);
   };
 
   const copyToClipboard = (text) => {
@@ -199,7 +206,7 @@ export default function Scanner() {
             </button>
             <button
               onClick={handleScan}
-              disabled={aiSuggestedCode !== null}
+              disabled={showDiff}
               className="flex items-center gap-2 px-6 py-1.5 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover transition-colors text-sm font-bold shadow-[0_0_15px_rgba(0,255,102,0.4)] uppercase tracking-widest disabled:opacity-50"
             >
               <Play size={16} />
@@ -221,33 +228,22 @@ export default function Scanner() {
                </button>
              </div>
           )}
-          {aiSuggestedCode ? (
-            <>
-              <DiffEditor
-                height="100%"
-                language={getMonacoLanguage(language)}
-                theme="vs-dark"
-                original={code}
-                modified={aiSuggestedCode}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  fontFamily: "'JetBrains Mono', 'Space Mono', monospace",
-                  padding: { top: 16 },
-                  renderSideBySide: false,
-                  readOnly: false
-                }}
-              />
-              <div className="absolute bottom-6 right-6 flex gap-4 z-10 p-4 cyber-panel border-cyber-primary shadow-2xl">
-                <button onClick={handleRejectFix} className="px-6 py-2 border flex items-center gap-2 border-cyber-error text-cyber-error uppercase tracking-widest font-bold hover:bg-cyber-error/10 text-sm">
-                  Reject Fix
-                </button>
-                <button onClick={handleAcceptFix} className="px-6 py-2 flex items-center gap-2 bg-cyber-primary text-[#000] uppercase tracking-widest font-bold hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.4)] text-sm">
-                  <CheckCircle size={18} />
-                  Accept Fix
-                </button>
-              </div>
-            </>
+          {showDiff && aiResult ? (
+            <DiffEditor
+              height="100%"
+              language={getMonacoLanguage(language)}
+              theme="vs-dark"
+              original={code}
+              modified={aiResult.fixedCode}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', 'Space Mono', monospace",
+                padding: { top: 16 },
+                renderSideBySide: false,
+                readOnly: false
+              }}
+            />
           ) : (
             <Editor
               height="100%"
@@ -271,8 +267,8 @@ export default function Scanner() {
 
       <div className="xl:w-1/3 flex flex-col h-full min-h-[500px]">
         <h2 className="text-lg font-bold text-cyber-text mb-4 tracking-widest uppercase flex items-center gap-2 border-b border-cyber-border pb-2 shrink-0">
-          Analysis Results
-          {hasScanned && (
+          {aiResult ? 'AI Analysis Report' : 'Analysis Results'}
+          {hasScanned && !aiResult && (
             <span className="text-xs font-normal px-2 py-0 border border-cyber-primary text-cyber-primary">
               [{results.length} ENTRIES]
             </span>
@@ -284,6 +280,14 @@ export default function Scanner() {
             <div className="h-full flex flex-col items-center justify-center text-center text-cyber-dark-text gap-4 border border-dashed border-cyber-border p-8 cyber-panel">
               <ShieldAlert size={48} className="opacity-50" />
               <p className="tracking-widest uppercase text-sm">Ready to scan.<br/>Run a scan to see results here.</p>
+            </div>
+          ) : aiResult ? (
+            <div className="cyber-panel p-6 border border-cyber-primary shadow-[inset_0_0_20px_rgba(0,255,102,0.1)]">
+               <div className="flex items-center gap-3 mb-6 text-cyber-primary uppercase tracking-widest font-bold border-b border-cyber-primary/30 pb-3">
+                 <Bot size={24} /> 
+                 <span>Executive Summary</span>
+               </div>
+               <p className="text-[15px] leading-relaxed text-cyber-text opacity-90">{aiResult.analysis}</p>
             </div>
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-cyber-primary gap-4 border border-cyber-primary p-8 cyber-panel shadow-[inset_0_0_30px_rgba(0,255,102,0.05)]">
@@ -325,22 +329,44 @@ export default function Scanner() {
         {/* Action Bottom Bar */}
         {hasScanned && results.length > 0 && (
           <div className="mt-4 flex gap-3 border-t border-cyber-border pt-4 shrink-0">
-            <button
-               onClick={handleBookmarkToggle}
-               disabled={!currentScanId}
-               className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 border transition-colors uppercase tracking-wide font-bold text-xs disabled:opacity-50 ${isBookmarked ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary shadow-[0_0_10px_rgba(0,255,102,0.2)]' : 'border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/50'}`}
-            >
-              {isBookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-              {isBookmarked ? 'Bookmarked' : 'Bookmark Scan'}
-            </button>
-            <button
-               onClick={handleGeminiAnalyze}
-               disabled={isAnalyzing || aiSuggestedCode !== null}
-               className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-wide font-bold text-xs disabled:opacity-50"
-            >
-               <Bot size={16} />
-               {isAnalyzing ? 'Analyzing...' : 'Analyze with Gemini'}
-            </button>
+            {showDiff ? (
+              <>
+                 <button onClick={handleRejectFix} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 border border-cyber-error text-cyber-error hover:bg-cyber-error/10 transition-colors uppercase tracking-wide font-bold text-[11px]">
+                    Reject Fix
+                 </button>
+                 <button onClick={handleAcceptFix} className="flex-[1.5] flex items-center justify-center gap-1.5 px-4 py-2 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-wide font-bold text-[11px]">
+                    <CheckCircle size={16} /> Accept Fix
+                 </button>
+              </>
+            ) : aiResult ? (
+              <>
+                 <button onClick={handleRejectFix} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 border border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/50 transition-colors uppercase tracking-wide font-bold text-[11px]">
+                    Dismiss
+                 </button>
+                 <button onClick={handleReviewFix} className="flex-[1.5] flex items-center justify-center gap-1.5 px-4 py-2 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-wide font-bold text-[11px]">
+                    <Code2 size={16} /> Review Code Fix
+                 </button>
+              </>
+            ) : (
+              <>
+                <button
+                   onClick={handleBookmarkToggle}
+                   disabled={!currentScanId}
+                   className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 border transition-colors uppercase tracking-wide font-bold text-[11px] disabled:opacity-50 ${isBookmarked ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary shadow-[0_0_10px_rgba(0,255,102,0.2)]' : 'border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/50'}`}
+                >
+                  {isBookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+                  {isBookmarked ? 'Bookmarked' : 'Bookmark Scan'}
+                </button>
+                <button
+                   onClick={handleGeminiAnalyze}
+                   disabled={isAnalyzing}
+                   className="flex-[1.2] flex items-center justify-center gap-1.5 px-4 py-2 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-wide font-bold text-[11px] disabled:opacity-50"
+                >
+                   <Bot size={16} />
+                   {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

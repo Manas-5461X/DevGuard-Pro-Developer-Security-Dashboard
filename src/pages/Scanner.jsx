@@ -4,7 +4,7 @@ import Editor, { DiffEditor } from '@monaco-editor/react';
 import { analyzeCode } from '../utils/analyzer';
 import { useScans } from '../hooks/useScans';
 import { analyzeWithGemini } from '../utils/ai';
-import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Code2, Bot, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Code2, Bot, Bookmark, BookmarkCheck, Download } from 'lucide-react';
 
 const DEFAULT_CODE = {
   javascript: '// Paste your JavaScript code here\n\nconst API_KEY = "12345678901234";\ndocument.write("Hello User");\n',
@@ -42,7 +42,19 @@ export default function Scanner() {
   const [aiResult, setAiResult] = useState(null); // { analysis: string, fixedCode: string }
   const [showDiff, setShowDiff] = useState(false);
 
-  const { saveScan, toggleBookmark } = useScans();
+  const { scans, saveScan, toggleBookmark } = useScans();
+
+  // Sync bookmark status with the global cache if this code has been scanned/saved
+  useEffect(() => {
+    const existingScan = scans.find(s => s.code === code);
+    if (existingScan) {
+      setCurrentScanId(existingScan.id);
+      setIsBookmarked(existingScan.isBookmarked);
+    } else {
+      setCurrentScanId(null);
+      setIsBookmarked(false);
+    }
+  }, [code, scans]);
 
   useEffect(() => {
     if (location.state?.restoreCode) {
@@ -151,6 +163,22 @@ export default function Scanner() {
     navigator.clipboard.writeText(text);
   };
 
+  const handleDownload = () => {
+    const extensions = {
+      javascript: 'js', python: 'py', java: 'java', php: 'php',
+      shell: 'sh', go: 'go', cpp: 'cpp', rust: 'rs',
+      react: 'jsx', angular: 'ts', vue: 'vue', svelte: 'svelte',
+      ruby: 'rb', swift: 'swift', kotlin: 'kt', docker: 'Dockerfile'
+    };
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `audit_source.${extensions[language] || 'txt'}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getSeverityColor = (severity) => {
     switch (severity) {
       case 'critical': return 'text-cyber-error border-cyber-error bg-cyber-error/10';
@@ -207,11 +235,19 @@ export default function Scanner() {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={handleClear}
-              className="flex items-center gap-2 px-4 py-1.5 border border-cyber-border text-cyber-dark-text hover:text-cyber-text transition-colors text-sm uppercase tracking-widest"
+              onClick={handleDownload}
+              className="flex items-center gap-2 px-4 py-1.5 border border-[#262626] text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5 transition-all rounded-full text-[11px] font-bold uppercase tracking-widest px-4"
+              title="Download Code File"
             >
-              <Trash2 size={16} />
-              CLEAR
+              <Download size={14} />
+              Download
+            </button>
+            <button
+              onClick={handleClear}
+              className="flex items-center gap-2 px-4 py-1.5 border border-[#262626] text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5 transition-all rounded-full text-[11px] font-bold uppercase tracking-widest px-4"
+            >
+              <Trash2 size={14} />
+              Clear
             </button>
             <button
               onClick={handleScan}

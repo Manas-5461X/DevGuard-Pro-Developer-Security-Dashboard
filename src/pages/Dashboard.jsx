@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useScans } from '../hooks/useScans';
 import { useAuth } from '../hooks/useAuth';
 import { ShieldAlert, FileCode2, History } from 'lucide-react';
+import { DashboardSkeleton } from '../components/ui/Skeleton';
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -11,14 +12,14 @@ export default function Dashboard() {
   const bookmarkedScans = useMemo(() => scans.filter(s => s.isBookmarked), [scans]);
 
   if (loading) {
-    return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Loading dashboard...</div>;
+    return <DashboardSkeleton />;
   }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="border-b border-cyber-border pb-4 mb-8">
-        <h1 className="text-2xl font-bold text-cyber-text tracking-widest mb-2 uppercase glow-text">Welcome, {currentUser?.email?.split('@')[0]}</h1>
-        <p className="text-cyber-dark-text tracking-wider uppercase text-sm">Security posture overview.</p>
+      <div className="border-b border-[#262626] pb-4 mb-8">
+        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Welcome, {currentUser?.displayName || currentUser?.email?.split('@')[0]}</h1>
+        <p className="text-[#A3A3A3] text-sm tracking-wide">Security posture overview.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
@@ -57,41 +58,42 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-12">
-        <h2 className="text-lg font-bold text-cyber-text mb-4 uppercase tracking-widest border-b border-cyber-border pb-2 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white mb-6 tracking-tight flex items-center justify-between">
           <span>Bookmarked Scans (Executive Summary)</span>
         </h2>
         {bookmarkedScans.length === 0 ? (
-           <div className="cyber-panel p-8 text-center border-dashed border-cyber-border opacity-70">
-             <p className="text-cyber-dark-text uppercase tracking-widest text-sm">No bookmarked scans found. Pin an audit log from the Scanner or History to see it here.</p>
+           <div className="cyber-panel p-8 text-center border-dashed border-[#262626] opacity-70">
+             <p className="text-[#737373] text-sm">No bookmarked scans found. Pin an audit log from the Scanner or History to see it here.</p>
            </div>
         ) : (
-          <div className="cyber-panel overflow-hidden">
+          <div className="cyber-panel overflow-hidden border-[#262626]">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-[#0a0f0d] text-cyber-dark-text text-xs uppercase tracking-widest border-b border-cyber-border">
+              <thead className="bg-[#000] text-[#737373] text-[10px] uppercase tracking-[0.2em] border-b border-[#262626]">
                 <tr>
-                  <th className="font-bold p-4">Date</th>
+                  <th className="font-bold p-4">Date / Source</th>
                   <th className="font-bold p-4 text-center">Issues Found</th>
-                  <th className="font-bold p-4">Status</th>
+                  <th className="font-bold p-4 text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-cyber-border/50 text-sm">
+              <tbody className="divide-y divide-[#262626]/50 text-[13px]">
                 {bookmarkedScans.slice(0, 5).map(scan => (
-                  <tr key={scan.id} className="hover:bg-cyber-primary/5 transition-colors">
-                    <td className="p-4 text-cyber-text opacity-90">
-                      {scan.createdAt ? new Date(scan.createdAt.toMillis()).toLocaleString() : 'JUST NOW'}
+                  <tr key={scan.id} className="hover:bg-white/5 transition-colors">
+                    <td className="p-4">
+                      <p className="text-[#F5F5F5] font-medium">{scan.title}</p>
+                      <p className="text-[#737373] text-[11px] mt-0.5">{scan.createdAt ? new Date(scan.createdAt.toMillis()).toLocaleString() : 'JUST NOW'}</p>
                     </td>
                     <td className="p-4 text-white font-bold text-center">
                       {scan.issueCount > 0 ? (
                         <span className="text-cyber-warning">{scan.issueCount}</span>
                       ) : (
-                        <span className="text-cyber-dark-text">0</span>
+                        <span className="text-[#737373]">0</span>
                       )}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-right">
                       {scan.issueCount > 0 ? (
-                        <span className="border border-cyber-error text-cyber-error uppercase tracking-widest text-xs px-2 py-1 font-bold">Vulnerable</span>
+                        <span className="text-cyber-error uppercase tracking-widest text-[10px] font-bold">Vulnerable</span>
                       ) : (
-                        <span className="border border-cyber-primary text-cyber-primary uppercase tracking-widest text-xs px-2 py-1 font-bold">Secure</span>
+                        <span className="text-cyber-primary uppercase tracking-widest text-[10px] font-bold">Secure</span>
                       )}
                     </td>
                   </tr>

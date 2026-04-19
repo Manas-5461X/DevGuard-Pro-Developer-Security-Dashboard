@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Eye, AlertTriangle, Terminal, Code2, CheckCircle2, XCircle } from 'lucide-react';
+import { docsContent } from '../data/docsContent';
+import { ChevronRight, ArrowUpCircle } from 'lucide-react';
 
 export default function Docs() {
-  const [activeSection, setActiveSection] = useState('introduction');
-
-  const sections = [
-    { id: 'introduction', title: 'Introduction & Methodology', icon: <Shield size={16} /> },
-    { id: 'owasp-top-10', title: 'OWASP Top 10 Context', icon: <AlertTriangle size={16} /> },
-    { id: 'xss-prevention', title: 'XSS & Injection Defense', icon: <Code2 size={16} /> },
-    { id: 'secrets-management', title: 'Secrets & Cryptography', icon: <Lock size={16} /> },
-    { id: 'ai-heuristics', title: 'AI Remediation Engine', icon: <Eye size={16} /> },
-    { id: 'best-practices', title: 'Language Architectures', icon: <Terminal size={16} /> },
-  ];
+  const [activeSection, setActiveSection] = useState(docsContent[0].id);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      const sectionElements = sections.map(s => document.getElementById(s.id));
+      // Scroll to top button visibility
+      setShowScrollTop(window.scrollY > 500);
+
+      // Scroll Spy logic
+      const sectionElements = docsContent.map(s => document.getElementById(s.id));
       const scrollPosition = window.scrollY + 200;
 
       for (let i = sectionElements.length - 1; i >= 0; i--) {
@@ -38,26 +35,38 @@ export default function Docs() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-12 pb-32 max-w-7xl mx-auto">
+    <div className="flex flex-col md:flex-row gap-12 pb-32 max-w-7xl mx-auto relative px-4">
+      {/* Scroll Top Button */}
+      {showScrollTop && (
+        <button 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-8 right-8 z-50 p-3 bg-cyber-primary text-[#000] rounded-full shadow-2xl hover:scale-110 transition-transform active:scale-95"
+        >
+          <ArrowUpCircle size={24} />
+        </button>
+      )}
+
       {/* Sticky Table of Contents */}
-      <nav className="hidden lg:block w-64 shrink-0 pt-8">
-        <div className="sticky top-8 bg-[#121212] border border-[#262626] rounded-2xl p-6 shadow-xl">
-          <h3 className="text-[#A3A3A3] text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
-            Documentation Base
+      <nav className="hidden lg:block w-72 shrink-0 pt-8">
+        <div className="sticky top-8 bg-[#121212] border border-[#262626] rounded-2xl p-6 shadow-xl max-h-[calc(100vh-4rem)] overflow-y-auto custom-scrollbar">
+          <h3 className="text-[#A3A3A3] text-[10px] font-bold tracking-[0.2em] uppercase mb-6 px-4">
+            Security Intelligence
           </h3>
-          <ul className="flex flex-col gap-2">
-            {sections.map(section => (
+          <ul className="flex flex-col gap-1.5">
+            {docsContent.map(section => (
               <li key={section.id}>
                 <button
                   onClick={() => scrollToSection(section.id)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-full text-[13px] font-medium transition-all duration-300 ${
+                  className={`w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-300 ${
                     activeSection === section.id
-                      ? 'bg-cyber-primary text-[#000] shadow-[0_0_15px_rgba(74,222,128,0.2)]'
+                      ? 'bg-cyber-primary text-[#000] shadow-[0_0_20px_rgba(74,222,128,0.15)] translate-x-1'
                       : 'text-[#737373] hover:text-[#F5F5F5] hover:bg-white/5'
                   }`}
                 >
-                  {section.icon}
-                  {section.title}
+                  <span className={activeSection === section.id ? 'text-[#000]' : 'text-cyber-primary/70'}>
+                    {section.icon}
+                  </span>
+                  <span className="truncate">{section.title}</span>
                 </button>
               </li>
             ))}
@@ -67,212 +76,62 @@ export default function Docs() {
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 pt-8">
-        <div className="mb-16">
-          <h1 className="text-4xl font-bold text-white mb-4 tracking-tight">System Documentation</h1>
-          <p className="text-[#A3A3A3] text-lg leading-relaxed">
-            Welcome to the DevGuard Pro architectural documentation. This encyclopedia covers
-            static application security testing (SAST) methodologies, mitigation techniques, and the underlying heuristic engine.
+        <div className="mb-20 border-b border-[#262626] pb-12">
+          <span className="text-cyber-primary text-xs font-bold tracking-[0.3em] uppercase mb-4 block">Knowledge Base 2026</span>
+          <h1 className="text-5xl font-bold text-white mb-6 tracking-tight">Security Documentation</h1>
+          <p className="text-[#A3A3A3] text-xl leading-relaxed max-w-3xl">
+            A comprehensive, industry-grade security encyclopedia covering modern defense mechanisms, 
+            threat remediation, and best practices for the full-stack developer.
           </p>
         </div>
 
-        <div className="space-y-32">
-          {/* SECTION 1: INTRODUCTION */}
-          <section id="introduction" className="space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#262626] pb-4 mb-8">
-              <Shield className="text-cyber-primary" size={28} />
-              <h2 className="text-2xl font-bold text-[#F5F5F5]">1. Introduction & Methodology</h2>
-            </div>
-            
-            <div className="prose prose-invert max-w-none text-[#A3A3A3] text-[15px] leading-8 space-y-6">
-              <p>
-                DevGuard Pro operates as a sophisticated hybrid engine combining lightning-fast regular expression based 
-                pattern matching (Heuristics) with Large Language Model (LLM) contextual remediation workflows. The primary 
-                objective of this system is to push security "Left" in the software development lifecycle (SDLC), providing 
-                developers with immediate feedback regarding cryptographic failures, injection vulnerabilities, and bad data handling.
-              </p>
-              
-              <h3 className="text-white text-lg font-semibold mt-8 mb-4">1.1 Static Analysis (SAST) Overview</h3>
-              <p>
-                Static Application Security Testing (SAST) evaluates source code without executing it. Our heuristic engine 
-                reads raw source code and evaluates it against thousands of recognized vulnerability signatures. Unlike Dynamic 
-                Analysis (DAST), SAST provides an immediate 100% code coverage scan identifying insecure library usages, dangerous 
-                DOM manipulations, and plaintext secret exposures immediately during the pre-commit or CI/CD stage.
-              </p>
-
-              <h3 className="text-white text-lg font-semibold mt-8 mb-4">1.2 Heuristic Signature Matching</h3>
-              <p>
-                Our pipeline utilizes highly optimized regex constraints mapped directly against CVE (Common Vulnerabilities and Exposures) 
-                and CWE (Common Weakness Enumeration) frameworks. By mapping strings to known bad practices—such as evaluating arbitrary 
-                user input via <code className="bg-[#121212] px-2 py-1 rounded text-cyber-primary">eval()</code> in Node.js, or passing unsanitized SQL variables—the engine achieves sub-millisecond alerting.
-              </p>
-            </div>
-          </section>
-
-          {/* SECTION 2: OWASP */}
-          <section id="owasp-top-10" className="space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#262626] pb-4 mb-8">
-              <AlertTriangle className="text-cyber-primary" size={28} />
-              <h2 className="text-2xl font-bold text-[#F5F5F5]">2. OWASP Top 10 Context</h2>
-            </div>
-            
-            <div className="prose prose-invert max-w-none text-[#A3A3A3] text-[15px] leading-8 space-y-6">
-              <p>
-                The Open Web Application Security Project (OWASP) Top 10 defines the preeminent standard for web application security.
-                DevGuard Pro heuristics are explicitly tailored to detect anti-patterns related directly to the OWASP framework.
-              </p>
-
-              <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6 mt-6">
-                <h4 className="text-white font-bold mb-2">A01:2021-Broken Access Control</h4>
-                <p className="text-sm">Failures typically lead to unauthorized information disclosure, modification, or destruction of all data. Avoid predictable IDs, utilize JWT effectively, and enforce server-side routing guards.</p>
-              </div>
-
-              <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6">
-                <h4 className="text-white font-bold mb-2">A03:2021-Injection</h4>
-                <p className="text-sm">Occurs when user-supplied data is not validated, filtered, or sanitized by the application. SQL Injection (SQLi), NoSQLi, OS Command Injection, and LDAP injections fall under this massive category.</p>
-              </div>
-
-              <div className="bg-[#121212] border border-[#262626] rounded-2xl p-6">
-                <h4 className="text-white font-bold mb-2">A07:2021-Identification and Authentication Failures</h4>
-                <p className="text-sm">Confirming user identity and session management is paramount. Implementing stateless secure protocols like OAuth 2.0 or properly signed JSON Web Tokens (JWT) prevents session hijacking.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* SECTION 3: XSS & Injection */}
-          <section id="xss-prevention" className="space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#262626] pb-4 mb-8">
-              <Code2 className="text-cyber-primary" size={28} />
-              <h2 className="text-2xl font-bold text-[#F5F5F5]">3. XSS & Injection Defense</h2>
-            </div>
-            
-            <div className="prose prose-invert max-w-none text-[#A3A3A3] text-[15px] leading-8 space-y-6">
-              <p>
-                Cross-Site Scripting (XSS) remains one of the most prolific client-side vulnerabilities. It allows an attacker 
-                to execute malicious JavaScript within the victim's browser context, often leading to session hijacking.
-              </p>
-
-              <div className="grid md:grid-cols-2 gap-6 mt-8">
-                {/* Anti-Pattern */}
-                <div className="bg-[#0A0A0A] border border-[#ef4444]/30 rounded-xl overflow-hidden">
-                  <div className="bg-[#ef4444]/10 p-3 flex items-center gap-2 border-b border-[#ef4444]/30">
-                    <XCircle className="text-[#ef4444]" size={16} />
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#ef4444]">Vulnerable Code</span>
-                  </div>
-                  <pre className="p-4 text-xs font-mono text-[#F5F5F5] overflow-x-auto">
-{`// React Anti-Pattern
-function Comment({ userInput }) {
-  // This executes arbitrary scripts!
-  return <div dangerouslySetInnerHTML={{ 
-    __html: userInput 
-  }} />;
-}`}
-                  </pre>
+        <div className="space-y-40">
+          {docsContent.map((chapter, index) => (
+            <section id={chapter.id} key={chapter.id} className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+              <div className="flex items-center gap-4 mb-10 group">
+                <div className="w-12 h-12 rounded-2xl bg-cyber-primary/10 border border-cyber-primary/20 flex items-center justify-center text-cyber-primary group-hover:scale-110 transition-transform">
+                  {chapter.icon}
                 </div>
-
-                {/* Secure Pattern */}
-                <div className="bg-[#0A0A0A] border border-cyber-primary/30 rounded-xl overflow-hidden">
-                  <div className="bg-cyber-primary/10 p-3 flex items-center gap-2 border-b border-cyber-primary/30">
-                    <CheckCircle2 className="text-cyber-primary" size={16} />
-                    <span className="text-xs font-bold uppercase tracking-widest text-cyber-primary">Secure Implementation</span>
-                  </div>
-                  <pre className="p-4 text-xs font-mono text-[#F5F5F5] overflow-x-auto">
-{`import DOMPurify from 'dompurify';
-
-function Comment({ userInput }) {
-  // Purify raw payload before injection
-  const safeHtml = DOMPurify.sanitize(userInput);
-  return <div dangerouslySetInnerHTML={{ 
-    __html: safeHtml 
-  }} />;
-}`}
-                  </pre>
+                <div>
+                  <span className="text-cyber-primary/60 text-[10px] font-bold tracking-widest uppercase mb-1 block">Chapter 0{index + 1}</span>
+                  <h2 className="text-3xl font-bold text-[#F5F5F5] tracking-tight">{chapter.title}</h2>
                 </div>
               </div>
               
-              <h3 className="text-white text-lg font-semibold mt-8 mb-4">3.2 SQL Injection Mechanics</h3>
-              <p>
-                SQLi occurs when string payload concatenation destroys query structure, converting string payloads into executable database commands.
-                NEVER concatenate user input to queries. ALWAYS use Parameterized Queries or an ORM (Prisma, EntityFramework).
+              <p className="text-[#A3A3A3] text-lg mb-12 leading-relaxed italic border-l-2 border-cyber-primary/30 pl-6 py-2">
+                {chapter.description}
               </p>
-            </div>
-          </section>
 
-          {/* SECTION 4: Secrets Management */}
-          <section id="secrets-management" className="space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#262626] pb-4 mb-8">
-              <Lock className="text-cyber-primary" size={28} />
-              <h2 className="text-2xl font-bold text-[#F5F5F5]">4. Cryptographic & Secrets Management</h2>
-            </div>
-            
-            <div className="prose prose-invert max-w-none text-[#A3A3A3] text-[15px] leading-8 space-y-6">
-              <p>
-                Hardcoding API keys, passwords, Database URIs, and AWS Secret Identifiers directly to source control constitutes
-                a CRITICAL severity vulnerability. Botnets scan public repositories across GitHub 24/7. Hardcoded credentials will be
-                cloned and exploited generally within 3 to 5 minutes of repository publication.
-              </p>
-              
-              <blockquote className="border-l-4 border-cyber-primary bg-[#121212] p-6 rounded-r-xl my-6">
-                "Secrets must never touch the codebase. Rely on environment variables (.env files via dotenv) locally, and utilize CI/CD injected pipeline secrets or Key Vaults (AWS Secrets Manager / Vault) in production environments."
-              </blockquote>
-
-              <ul className="list-disc pl-6 space-y-2 mt-4 text-[#F5F5F5]">
-                <li>Always include <code className="bg-[#121212] px-2 rounded">.env</code> in your <code className="bg-[#121212] px-2 rounded">.gitignore</code> file.</li>
-                <li>Utilize bcrypt (with cost &gt; 10) or Argon2 for hashing static passwords; never hash with MD5 or SHA1.</li>
-                <li>Rotate asymmetric access keys strictly on 90-day lifecycles.</li>
-              </ul>
-            </div>
-          </section>
-
-          {/* SECTION 5: AI Engine */}
-          <section id="ai-heuristics" className="space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#262626] pb-4 mb-8">
-              <Eye className="text-cyber-primary" size={28} />
-              <h2 className="text-2xl font-bold text-[#F5F5F5]">5. AI Remediation Engine (Gemini)</h2>
-            </div>
-            
-            <div className="prose prose-invert max-w-none text-[#A3A3A3] text-[15px] leading-8 space-y-6">
-              <p>
-                The DevGuard Pro remediation system interfaces directly with the ultra-modern Google Gemini 2.5 Flash LLM infrastructure via the <code className="bg-[#121212] px-2 rounded">@google/genai</code> HTTP framework.
-              </p>
-              <p>
-                When a user executes <strong>"Analyze with AI"</strong>, the DevGuard Pro client marshals the raw stringified code alongside string references of every static AST heuristic match. Gemini operates within a strict zero-shot system prompt demanding a purely structured <code className="bg-[#121212] px-2 rounded">application/json</code> response constraint containing the vulnerability explanation and a completely repaired raw code patch. This establishes our automated 1-click CI/CD remediation pipeline via the Monaco Diff editor framework.
-              </p>
-            </div>
-          </section>
-
-          {/* SECTION 6: Best Practices */}
-          <section id="best-practices" className="space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#262626] pb-4 mb-8">
-              <Terminal className="text-cyber-primary" size={28} />
-              <h2 className="text-2xl font-bold text-[#F5F5F5]">6. Language Specific Security</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {/* Card 1 */}
-               <div className="bg-[#121212] p-6 rounded-2xl border border-[#262626]">
-                 <h4 className="text-white font-bold mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-400"></div> Python (Django/Flask)</h4>
-                 <p className="text-sm text-[#A3A3A3]">Avoid utilizing `os.system()` or `subprocess.Popen(shell=True)`. Ensure the `pickle` module is never utilized for un-trusted data deserialization.</p>
-               </div>
-               {/* Card 2 */}
-               <div className="bg-[#121212] p-6 rounded-2xl border border-[#262626]">
-                 <h4 className="text-white font-bold mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-400"></div> C & C++</h4>
-                 <p className="text-sm text-[#A3A3A3]">Buffer overflows plague native code. Ban `gets()` and `strcpy()`. Strictly enforce `strncpy()` or Modern C++ `std::string` buffers.</p>
-               </div>
-               {/* Card 3 */}
-               <div className="bg-[#121212] p-6 rounded-2xl border border-[#262626]">
-                 <h4 className="text-white font-bold mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-400"></div> Node.js & React</h4>
-                 <p className="text-sm text-[#A3A3A3]">Avoid SSR injections. Configure Helmet.js to enforce strict Content Security Policies (CSP). Guard against NoSQL injection in Mongoose queries.</p>
-               </div>
-               {/* Card 4 */}
-               <div className="bg-[#121212] p-6 rounded-2xl border border-[#262626]">
-                 <h4 className="text-white font-bold mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-400"></div> Java / JVM</h4>
-                 <p className="text-sm text-[#A3A3A3]">Log4Shell and object injection are highly prevalent. Restrict deserialization libraries like Jackson with strict type mapping configurations.</p>
-               </div>
-            </div>
-          </section>
-
+              <div className="space-y-16">
+                {chapter.sections.map((sec, sIdx) => (
+                  <div key={sIdx} className="prose prose-invert max-w-none text-[#A3A3A3] text-[16px] leading-[1.8]">
+                    <h3 className="text-white text-xl font-bold mb-6 flex items-center gap-3">
+                      <ChevronRight size={18} className="text-cyber-primary" />
+                      {sec.subtitle}
+                    </h3>
+                    <div className="whitespace-pre-wrap text-[#A3A3A3]">
+                      {sec.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </main>
+      
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #262626;
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   );
 }

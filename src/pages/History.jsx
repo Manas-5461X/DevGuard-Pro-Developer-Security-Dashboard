@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useScans } from '../hooks/useScans';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Bookmark, BookmarkCheck, RotateCcw } from 'lucide-react';
+import { HistorySkeleton } from '../components/ui/Skeleton';
 
 export default function History() {
   const { scans, loading, removeScan, toggleBookmark } = useScans();
@@ -25,7 +26,7 @@ export default function History() {
   };
 
   if (loading) {
-    return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Loading history...</div>;
+    return <HistorySkeleton />;
   }
 
   return (

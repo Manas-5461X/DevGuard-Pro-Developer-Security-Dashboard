@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { Shield, LayoutDashboard, History, LogOut, BookOpen, Settings, User } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
-export default function Sidebar() {
+export default function Sidebar({ isCollapsed }) {
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -29,41 +29,46 @@ export default function Sidebar() {
   const displayEmail = currentUser?.email || 'user@devguard.pro';
 
   return (
-    <aside className="w-[260px] flex-shrink-0 bg-[#0A0A0A] flex flex-col z-10 border-r border-[#262626]">
+    <aside className={`flex-shrink-0 bg-[#0A0A0A] flex flex-col z-10 border-r border-[#262626] transition-all duration-300 ${isCollapsed ? 'w-[80px]' : 'w-[260px]'}`}>
       {/* User Block like NXUS */}
-      <div className="p-6">
+      <div className={`p-6 ${isCollapsed ? 'flex justify-center' : ''}`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyber-primary flex items-center justify-center text-[#000] font-bold text-lg shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-cyber-primary flex items-center justify-center text-[#000] font-bold text-lg shrink-0 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
             {userInitial}
           </div>
-          <div className="overflow-hidden">
-            <p className="text-[#F5F5F5] font-semibold text-[13px] truncate">{displayName}</p>
-            <p className="text-[#737373] text-[9px] truncate tracking-wider">{displayEmail}</p>
-          </div>
+          {!isCollapsed && (
+            <div className="overflow-hidden animate-in fade-in duration-300">
+              <p className="text-[#F5F5F5] font-semibold text-[13px] truncate">{displayName}</p>
+              <p className="text-[#737373] text-[9px] truncate tracking-wider uppercase">{displayEmail}</p>
+            </div>
+          )}
         </div>
       </div>
 
-      <nav className="flex-1 px-4 flex flex-col gap-6 overflow-y-auto pt-2">
+      <nav className="flex-1 px-4 flex flex-col gap-6 overflow-y-auto pt-2 overflow-x-hidden">
         {/* Navigation Section */}
         <div>
-          <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3">
-            Core Protocol
-          </h3>
+          {!isCollapsed && (
+            <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3 animate-in fade-in duration-300">
+              Core Protocol
+            </h3>
+          )}
           <div className="flex flex-col gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.name}
                 to={item.path}
+                title={isCollapsed ? item.name : ''}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium rounded-full transition-all duration-300 ${
                     isActive
                       ? 'bg-cyber-primary/10 text-cyber-primary'
                       : 'text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5'
-                  }`
+                  } ${isCollapsed ? 'justify-center px-0' : ''}`
                 }
               >
                 {item.icon}
-                <span>{item.name}</span>
+                {!isCollapsed && <span className="animate-in fade-in duration-300">{item.name}</span>}
               </NavLink>
             ))}
           </div>
@@ -71,22 +76,25 @@ export default function Sidebar() {
 
         {/* Resources Section */}
         <div>
-          <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3">
-            Resources
-          </h3>
+          {!isCollapsed && (
+            <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3 animate-in fade-in duration-300">
+              Resources
+            </h3>
+          )}
           <div className="flex flex-col gap-1">
             <NavLink
               to={docsItem.path}
+              title={isCollapsed ? docsItem.name : ''}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium rounded-full transition-all duration-300 ${
                   isActive
                     ? 'bg-cyber-primary/10 text-cyber-primary'
                     : 'text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5'
-                }`
+                } ${isCollapsed ? 'justify-center px-0' : ''}`
               }
             >
               {docsItem.icon}
-              <span>{docsItem.name}</span>
+              {!isCollapsed && <span className="animate-in fade-in duration-300">{docsItem.name}</span>}
             </NavLink>
           </div>
         </div>
@@ -96,14 +104,17 @@ export default function Sidebar() {
       <div className="p-4 mt-auto">
         <button 
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors text-[13px] font-medium"
+          title={isCollapsed ? 'Sign Out' : ''}
+          className={`flex items-center gap-2 rounded-full border border-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors text-[13px] font-medium ${isCollapsed ? 'w-10 h-10 justify-center p-0 mx-auto' : 'w-full px-4 py-2.5 justify-center'}`}
         >
           <LogOut size={16} />
-          <span>Sign Out</span>
+          {!isCollapsed && <span className="animate-in fade-in duration-300">Sign Out</span>}
         </button>
-        <p className="text-center text-[10px] text-[#737373] mt-4 tracking-widest uppercase">
-          DevGuard Pro V1.0
-        </p>
+        {!isCollapsed && (
+          <p className="text-center text-[10px] text-[#737373] mt-4 tracking-widest uppercase animate-in fade-in duration-300">
+            DevGuard Pro V1.0
+          </p>
+        )}
       </div>
     </aside>
   );

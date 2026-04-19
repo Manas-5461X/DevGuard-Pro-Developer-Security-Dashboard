@@ -9,15 +9,19 @@ export async function analyzeWithGemini(code, vulnerabilities) {
     `- Line ${v.line}: ${v.type} (${v.severity}). Issue: ${v.message}. Recommended Fix: ${v.fix}`
   ).join('\n');
 
-  const systemPrompt = `You are an elite DevSecOps code remediation engine.
-The user will provide their source code along with a list of security vulnerabilities detected by a static analyzer.
-Your task is to analyze the vulnerabilities and provide a completely fixed version of the code.
+  const hasLocalFindings = vulnerabilities.length > 0;
+
+  const systemPrompt = `You are an elite DevSecOps security auditor.
+${hasLocalFindings 
+  ? 'Your task is to analyze the local scan results provided and produce a completely secure, fixed version of the code.'
+  : 'The local heuristic engine found zero issues, but its search is limited. Your task is to perform an autonomous Deep Security Audit to find subtle vulnerabilities (XSS, SQLi, Logic Flaws, Insecure Outputs) that heuristics often miss.'
+}
 
 CRITICALLY IMPORTANT INSTRUCTIONS:
 The user has requested that responseMimeType is application/json.
-- The JSON object must have exactly two keys: "analysis" and "fixedCode".
-- "analysis" should be a concise 2-3 sentence explanation of the vulnerabilities found and the strategy you used to fix them.
-- "fixedCode" must be the exact raw complete source code with the fixes securely applied. Do NOT escape the fixedCode incorrectly, it should be a raw valid string.
+- JSON must have two keys: "analysis" and "fixedCode".
+- "analysis": A 2-3 sentence technical summary of vulnerabilities ${hasLocalFindings ? 'provided' : 'you discovered'} and the fix strategy.
+- "fixedCode": The complete source code with all fixes applied. If no issues are found even after your deep audit, return the original code and state "No issues found" in the analysis.
 
 schema:
 {
@@ -25,11 +29,13 @@ schema:
   "fixedCode": "..."
 }`;
 
-  const userPrompt = `ORIGINAL CODE:
+  const userPrompt = `SOURCE CODE:
 ${code}
 
-VULNERABILITIES DETECTED:
-${issueList}
+${hasLocalFindings 
+  ? `LOCAL VULNERABILITIES DETECTED:\n${issueList}` 
+  : 'LOCAL SCAN RESULTS: [NO HEURISTIC ISSUES FOUND - PERFORM FULL ZERO-KNOWLEDGE DISCOVERY]'
+}
 
 Return ONLY the JSON.`;
 

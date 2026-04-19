@@ -236,12 +236,17 @@ function renderInline(text) {
     // On mobile: switch to results panel
     setShowEditor(false);
     
-    // Auto-save EVERY scan to history
+    // Auto-save initial findings (even if empty)
+    let scanId = null;
     try {
-      const scanId = await saveScan(code, findings);
+      scanId = await saveScan(code, findings);
       setCurrentScanId(scanId);
-    } catch (err) { 
-      console.error('Auto-save failed', err); 
+    } catch (err) { console.error('Auto-save failed', err); }
+
+    // 🚀 AI ESCALATION BRIDGE:
+    // If local heuristics find nothing, automatically trigger the Deep AI Audit
+    if (findings.length === 0) {
+      await handleGeminiAnalyze(code, findings, true);
     }
   };
 
@@ -272,12 +277,27 @@ function renderInline(text) {
     }
   };
 
-  const handleGeminiAnalyze = async () => {
-    if (!results.length) return;
-    setIsAnalyzing(true); setAiError(null);
-    try { setAiResult(await analyzeWithGemini(code, results)); }
-    catch (err) { setAiError(err.message); }
-    setIsAnalyzing(false);
+  const [isEscalating, setIsEscalating] = useState(false);
+
+  const handleGeminiAnalyze = async (customCode, customResults, auto = false) => {
+    const activeCode = customCode || code;
+    const activeResults = customResults || results;
+    
+    setIsAnalyzing(true);
+    if (auto) setIsEscalating(true);
+    setAiError(null);
+    
+    try { 
+      const result = await analyzeWithGemini(activeCode, activeResults); 
+      setAiResult(result);
+    } catch (err) { 
+      setAiError(err.message); 
+      // If it was auto-triggered, we still want to show "System Secure" if AI fails
+      if (auto) setHasScanned(true);
+    } finally {
+      setIsAnalyzing(false);
+      setIsEscalating(false);
+    }
   };
 
   const handleDownload = () => {
@@ -472,6 +492,25 @@ function renderInline(text) {
               </div>
               <div className="w-full bg-[#1A1A1A] h-1 rounded-full overflow-hidden">
                 <div className="bg-cyber-primary h-full animate-[progress_4.5s_linear]" style={{ width: '100%' }} />
+              </div>
+            </div>
+          ) : isAnalyzing && isEscalating ? (
+            /* ── AI Escalation Animation ── */
+            <div className="h-full flex flex-col items-center justify-center text-center gap-6 p-8">
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-cyber-primary/10 border-b-cyber-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Bot size={28} className="text-cyber-primary animate-pulse" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-cyber-primary font-bold text-sm tracking-widest uppercase mb-2">Escalating to AI Engine</h3>
+                <p className="text-[#525252] text-xs max-w-[220px]">Heuristics clear. Running deep zero-knowledge security audit...</p>
+              </div>
+              <div className="flex gap-1">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="w-1.5 h-1.5 bg-cyber-primary rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+                ))}
               </div>
             </div>
           ) : aiResult ? (

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import Editor from '@monaco-editor/react';
+import Editor, { DiffEditor } from '@monaco-editor/react';
 import { analyzeCode } from '../utils/analyzer';
 import { useScans } from '../hooks/useScans';
-import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Save, Code2 } from 'lucide-react';
+import { analyzeWithGemini } from '../utils/ai';
+import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Code2, Bot, Bookmark, BookmarkCheck } from 'lucide-react';
 
 const DEFAULT_CODE = {
   javascript: '// Paste your JavaScript code here\n\nconst API_KEY = "12345678901234";\ndocument.write("Hello User");\n',
@@ -28,8 +29,14 @@ export default function Scanner() {
   const [code, setCode] = useState(DEFAULT_CODE['javascript']);
   const [results, setResults] = useState([]);
   const [hasScanned, setHasScanned] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { saveScan } = useScans();
+  
+  // AI and History States
+  const [currentScanId, setCurrentScanId] = useState(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [aiSuggestedCode, setAiSuggestedCode] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const { saveScan, toggleBookmark } = useScans();
 
   const getMonacoLanguage = (lang) => {
     switch(lang) {
@@ -52,30 +59,72 @@ export default function Scanner() {
     setCode(DEFAULT_CODE[newLang]);
     setResults([]);
     setHasScanned(false);
+    setAiSuggestedCode(null);
+    setCurrentScanId(null);
+    setIsBookmarked(false);
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
     const findings = analyzeCode(code);
     setResults(findings);
     setHasScanned(true);
+    setAiSuggestedCode(null);
+    setIsBookmarked(false);
+    
+    // Auto-audit logs background save
+    if (findings.length > 0) {
+      try {
+        const scanId = await saveScan(code, findings);
+        setCurrentScanId(scanId);
+      } catch (err) {
+        console.error('Audit log auto-save failed', err);
+      }
+    } else {
+      setCurrentScanId(null);
+    }
   };
 
   const handleClear = () => {
     setCode(DEFAULT_CODE[language]);
     setResults([]);
     setHasScanned(false);
+    setAiSuggestedCode(null);
+    setCurrentScanId(null);
+    setIsBookmarked(false);
   };
 
-  const handleSave = async () => {
-    if (!hasScanned) return;
-    setIsSaving(true);
+  const handleBookmarkToggle = async () => {
+    if (!currentScanId) return;
     try {
-      await saveScan(code, results);
-      alert('Scan saved successfully to your history.');
-    } catch (err) {
-      alert('Failed to save scan.');
+      await toggleBookmark(currentScanId, isBookmarked);
+      setIsBookmarked(!isBookmarked);
+    } catch(err) {
+      console.error(err);
     }
-    setIsSaving(false);
+  };
+
+  const handleGeminiAnalyze = async () => {
+    if (!results.length) return;
+    setIsAnalyzing(true);
+    try {
+      const fixedCode = await analyzeWithGemini(code, results);
+      setAiSuggestedCode(fixedCode);
+    } catch (err) {
+      alert("AI Remediation failed: " + err.message);
+    }
+    setIsAnalyzing(false);
+  };
+
+  const handleAcceptFix = () => {
+    setCode(aiSuggestedCode);
+    setAiSuggestedCode(null);
+    setResults([]);
+    setHasScanned(false);
+    setCurrentScanId(null);
+  };
+
+  const handleRejectFix = () => {
+    setAiSuggestedCode(null);
   };
 
   const copyToClipboard = (text) => {
@@ -106,7 +155,7 @@ export default function Scanner() {
     <div className="h-[calc(100vh-6rem)] flex gap-6">
       {/* Editor Section */}
       <div className="flex-1 flex flex-col cyber-panel overflow-hidden shadow-2xl">
-        <div className="h-12 border-b border-cyber-border flex items-center justify-between px-4">
+        <div className="h-12 border-b border-cyber-border flex items-center justify-between px-4 z-20 bg-cyber-surface">
           <div className="flex items-center gap-3">
             <h2 className="text-cyber-text font-bold text-sm tracking-widest flex items-center gap-2 uppercase">
               <Code2 size={16} className="text-cyber-primary glow-text" />
@@ -137,16 +186,6 @@ export default function Scanner() {
             </select>
           </div>
           <div className="flex gap-3">
-            {hasScanned && (
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-1.5 border border-cyber-primary text-cyber-primary hover:bg-cyber-primary/10 transition-colors text-sm uppercase tracking-widest disabled:opacity-50"
-              >
-                <Save size={16} />
-                {isSaving ? 'Saving...' : 'Save Scan'}
-              </button>
-            )}
             <button
               onClick={handleClear}
               className="flex items-center gap-2 px-4 py-1.5 border border-cyber-border text-cyber-dark-text hover:text-cyber-text transition-colors text-sm uppercase tracking-widest"
@@ -156,7 +195,8 @@ export default function Scanner() {
             </button>
             <button
               onClick={handleScan}
-              className="flex items-center gap-2 px-6 py-1.5 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover transition-colors text-sm font-bold shadow-[0_0_15px_rgba(0,255,102,0.4)] uppercase tracking-widest"
+              disabled={aiSuggestedCode !== null}
+              className="flex items-center gap-2 px-6 py-1.5 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover transition-colors text-sm font-bold shadow-[0_0_15px_rgba(0,255,102,0.4)] uppercase tracking-widest disabled:opacity-50"
             >
               <Play size={16} />
               Run Scan
@@ -165,27 +205,56 @@ export default function Scanner() {
         </div>
         
         <div className="flex-1 overflow-hidden relative">
-          <Editor
-            height="100%"
-            language={getMonacoLanguage(language)}
-            theme="vs-dark"
-            value={code}
-            onChange={(value) => setCode(value || '')}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              fontFamily: "'JetBrains Mono', 'Space Mono', monospace",
-              padding: { top: 16 },
-              scrollBeyondLastLine: false,
-              overviewRulerBorder: false,
-              hideCursorInOverviewRuler: true
-            }}
-          />
+          {aiSuggestedCode ? (
+            <>
+              <DiffEditor
+                height="100%"
+                language={getMonacoLanguage(language)}
+                theme="vs-dark"
+                original={code}
+                modified={aiSuggestedCode}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  fontFamily: "'JetBrains Mono', 'Space Mono', monospace",
+                  padding: { top: 16 },
+                  renderSideBySide: false,
+                  readOnly: false
+                }}
+              />
+              <div className="absolute bottom-6 right-6 flex gap-4 z-10 p-4 cyber-panel border-cyber-primary shadow-2xl">
+                <button onClick={handleRejectFix} className="px-6 py-2 border flex items-center gap-2 border-cyber-error text-cyber-error uppercase tracking-widest font-bold hover:bg-cyber-error/10 text-sm">
+                  Reject Fix
+                </button>
+                <button onClick={handleAcceptFix} className="px-6 py-2 flex items-center gap-2 bg-cyber-primary text-[#000] uppercase tracking-widest font-bold hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.4)] text-sm">
+                  <CheckCircle size={18} />
+                  Accept Fix
+                </button>
+              </div>
+            </>
+          ) : (
+            <Editor
+              height="100%"
+              language={getMonacoLanguage(language)}
+              theme="vs-dark"
+              value={code}
+              onChange={(value) => setCode(value || '')}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', 'Space Mono', monospace",
+                padding: { top: 16 },
+                scrollBeyondLastLine: false,
+                overviewRulerBorder: false,
+                hideCursorInOverviewRuler: true
+              }}
+            />
+          )}
         </div>
       </div>
 
       <div className="xl:w-1/3 flex flex-col h-full min-h-[500px]">
-        <h2 className="text-lg font-bold text-cyber-text mb-4 tracking-widest uppercase flex items-center gap-2 border-b border-cyber-border pb-2">
+        <h2 className="text-lg font-bold text-cyber-text mb-4 tracking-widest uppercase flex items-center gap-2 border-b border-cyber-border pb-2 shrink-0">
           Analysis Results
           {hasScanned && (
             <span className="text-xs font-normal px-2 py-0 border border-cyber-primary text-cyber-primary">
@@ -236,8 +305,29 @@ export default function Scanner() {
             ))
           )}
         </div>
+
+        {/* Action Bottom Bar */}
+        {hasScanned && results.length > 0 && (
+          <div className="mt-4 flex gap-3 border-t border-cyber-border pt-4 shrink-0">
+            <button
+               onClick={handleBookmarkToggle}
+               disabled={!currentScanId}
+               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border transition-colors uppercase tracking-widest font-bold text-sm disabled:opacity-50 ${isBookmarked ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary shadow-[0_0_10px_rgba(0,255,102,0.2)]' : 'border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/50'}`}
+            >
+              {isBookmarked ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+              {isBookmarked ? 'Bookmarked' : 'Bookmark Scan'}
+            </button>
+            <button
+               onClick={handleGeminiAnalyze}
+               disabled={isAnalyzing || aiSuggestedCode !== null}
+               className="flex-[2] flex items-center justify-center gap-2 px-4 py-3 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-widest font-bold text-sm disabled:opacity-50"
+            >
+               <Bot size={18} />
+               {isAnalyzing ? 'Analyzing Code...' : 'Analyze with Gemini'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

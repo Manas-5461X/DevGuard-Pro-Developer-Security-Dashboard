@@ -26,7 +26,7 @@ export function analyzeCode(code) {
       type: 'SQL Injection',
       severity: 'critical',
       message: 'String concatenation or interpolation detected in SQL query. Vulnerable to SQL injection.',
-      fix: 'Use parameterized queries, ORMs, or prepared statements.'
+      fix: 'Use parameterized queries, ORMs, or prepared statements via PreparedStatement (Java), bindValue (PHP), or similar for your engine.'
     },
     {
       id: 'nosql-injection',
@@ -93,6 +93,30 @@ export function analyzeCode(code) {
       severity: 'high',
       message: 'Explicitly bypassing Angular\'s DOM Sanitizer is extremely dangerous.',
       fix: 'Ensure the data passed to the bypass function is 100% strictly validated.'
+    },
+    {
+      id: 'java-servlet-xss',
+      pattern: /response\.getWriter\(\)\.(?:print|println|write|append)\s*\(.*(?:\+|%s)/i,
+      type: 'Server-Side XSS (Java)',
+      severity: 'high',
+      message: 'Directly writing unsanitized user input to the response stream in Java Servlets.',
+      fix: 'Use a templating engine (JSP/Thymeleaf) with auto-escaping, or use an HTML encoding library.'
+    },
+    {
+      id: 'php-echo-xss',
+      pattern: /(?:echo|print)\s+.*(?:\$_GET|\$_POST|\$_REQUEST|\$_COOKIE)/i,
+      type: 'Server-Side XSS (PHP)',
+      severity: 'high',
+      message: 'Echoing raw request data directly to the browser is a classic XSS vulnerability.',
+      fix: 'Always wrap output in htmlspecialchars() or use a secure template engine like Twig.'
+    },
+    {
+      id: 'python-flask-xss',
+      pattern: /render_template_string\s*\(.*(?:\+|%s|\$|\{)/i,
+      type: 'Server-Side XSS (Python)',
+      severity: 'high',
+      message: 'Using render_template_string with dynamic data can lead to Server-Side Template Injection (SSTI) and XSS.',
+      fix: 'Prefer render_template with static files and pass data as variables to Jinja2.'
     },
 
     // === 3. CRYPTOGRAPHY & SECRETS ===

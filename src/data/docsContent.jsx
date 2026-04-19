@@ -757,7 +757,7 @@ DEVGUARD PRO DETECTION PATTERNS
 Every form of string concatenation in a query context is flagged:
 JavaScript:
   db.query("SELECT " + req.body.field + " FROM users")
-  `SELECT * FROM orders WHERE id = ${req.params.id}`
+  \`SELECT * FROM orders WHERE id = \${req.params.id}\`
 
 Python:
   cursor.execute("SELECT * FROM users WHERE id = " + user_id)
@@ -1382,7 +1382,7 @@ CONTAINER SCANNING
 - name: Scan image for vulnerabilities
   uses: aquasecurity/trivy-action@master
   with:
-    image-ref: 'myapp:${{ github.sha }}'
+    image-ref: 'myapp:\${{ github.sha }}'
     exit-code: '1'
     severity: 'CRITICAL,HIGH'
 

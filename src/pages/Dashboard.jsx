@@ -8,6 +8,7 @@ export default function Dashboard() {
   const { scans, loading, getStats } = useScans();
   
   const stats = useMemo(() => getStats(), [scans, getStats]);
+  const bookmarkedScans = useMemo(() => scans.filter(s => s.isBookmarked), [scans]);
 
   if (loading) {
     return <div className="text-cyber-primary flex items-center justify-center p-8 uppercase tracking-widest animate-pulse">Loading dashboard...</div>;
@@ -57,11 +58,11 @@ export default function Dashboard() {
 
       <div className="mt-12">
         <h2 className="text-lg font-bold text-cyber-text mb-4 uppercase tracking-widest border-b border-cyber-border pb-2 flex items-center justify-between">
-          <span>Recent Scans</span>
+          <span>Bookmarked Scans (Executive Summary)</span>
         </h2>
-        {scans.length === 0 ? (
+        {bookmarkedScans.length === 0 ? (
            <div className="cyber-panel p-8 text-center border-dashed border-cyber-border opacity-70">
-             <p className="text-cyber-dark-text uppercase tracking-widest text-sm">No scans found. Navigate to the Scanner to get started.</p>
+             <p className="text-cyber-dark-text uppercase tracking-widest text-sm">No bookmarked scans found. Pin an audit log from the Scanner or History to see it here.</p>
            </div>
         ) : (
           <div className="cyber-panel overflow-hidden">
@@ -74,7 +75,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-cyber-border/50 text-sm">
-                {scans.slice(0, 5).map(scan => (
+                {bookmarkedScans.slice(0, 5).map(scan => (
                   <tr key={scan.id} className="hover:bg-cyber-primary/5 transition-colors">
                     <td className="p-4 text-cyber-text opacity-90">
                       {scan.createdAt ? new Date(scan.createdAt.toMillis()).toLocaleString() : 'JUST NOW'}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/firebase';
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, orderBy, updateDoc } from 'firebase/firestore';
 import { useAuth } from './useAuth';
 
 export function useScans() {
@@ -48,30 +48,40 @@ export function useScans() {
   const saveScan = async (code, vulnerabilities) => {
     if (!currentUser) return null;
     try {
-      const docRef = await addDoc(collection(db, 'scans'), {
+      const payload = {
         userId: currentUser.uid,
         code: code,
         vulnerabilities: vulnerabilities,
         issueCount: vulnerabilities.length,
+        isBookmarked: false,
         createdAt: serverTimestamp()
-      });
-      // Optimistically push to local state to avoid latency
+      };
+      const docRef = await addDoc(collection(db, 'scans'), payload);
+      
       const newScan = {
         id: docRef.id,
-        userId: currentUser.uid,
-        code,
-        vulnerabilities,
-        issueCount: vulnerabilities.length,
-        // Mock timestamp for immediate UI update until silent fetch completes
+        ...payload,
         createdAt: { toMillis: () => Date.now() } 
       };
       setScans(prev => [newScan, ...prev]);
-      
-      // Silent fetch in background to sync true timestamps
       fetchScans(true);
       return docRef.id;
     } catch (err) {
       console.error('Error saving scan:', err);
+      throw err;
+    }
+  };
+
+  const toggleBookmark = async (scanId, currentStatus) => {
+    try {
+      const scanRef = doc(db, 'scans', scanId);
+      await updateDoc(scanRef, {
+        isBookmarked: !currentStatus
+      });
+      // Optimistic update
+      setScans(prev => prev.map(s => s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s));
+    } catch (err) {
+      console.error('Error toggling bookmark:', err);
       throw err;
     }
   };
@@ -97,5 +107,5 @@ export function useScans() {
     return { totalScans, totalIssues, criticalIssues };
   };
 
-  return { scans, loading, saveScan, removeScan, getStats, refetch: fetchScans };
+  return { scans, loading, saveScan, toggleBookmark, removeScan, getStats, refetch: fetchScans };
 }

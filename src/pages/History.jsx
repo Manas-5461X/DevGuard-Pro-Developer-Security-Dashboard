@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useScans } from '../hooks/useScans';
-import { Trash2, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Bookmark, BookmarkCheck } from 'lucide-react';
 
 export default function History() {
-  const { scans, loading, removeScan } = useScans();
+  const { scans, loading, removeScan, toggleBookmark } = useScans();
   const [expandedScan, setExpandedScan] = useState(null);
 
   const toggleExpand = (id) => {
@@ -63,6 +63,13 @@ export default function History() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); toggleBookmark(scan.id, scan.isBookmarked); }}
+                      className={`hover:bg-cyber-primary/10 transition-colors p-2 border border-transparent hover:border-cyber-primary ${scan.isBookmarked ? 'text-cyber-primary' : 'text-cyber-dark-text hover:text-cyber-primary'}`}
+                      title={scan.isBookmarked ? "Remove Bookmark" : "Bookmark this Scan"}
+                    >
+                      {scan.isBookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+                    </button>
                     <button 
                       onClick={(e) => handleDelete(e, scan.id)}
                       className="text-cyber-dark-text hover:text-cyber-error hover:bg-cyber-error/10 transition-colors p-2 border border-transparent hover:border-cyber-error"

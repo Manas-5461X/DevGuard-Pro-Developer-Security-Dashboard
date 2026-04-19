@@ -4,7 +4,8 @@ import Editor, { DiffEditor } from '@monaco-editor/react';
 import { analyzeCode } from '../utils/analyzer';
 import { useScans } from '../hooks/useScans';
 import { analyzeWithGemini } from '../utils/ai';
-import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Code2, Bot, Bookmark, BookmarkCheck, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Copy, AlertTriangle, Info, Play, Trash2, Code2, Bot, Bookmark, BookmarkCheck, Download, ChevronDown, ChevronUp, RotateCcw, Eye } from 'lucide-react';
+import CustomDropdown from '../components/ui/CustomDropdown';
 
 const DEFAULT_CODE = {
   javascript: '// Paste your JavaScript code here\n\nconst API_KEY = "12345678901234";\ndocument.write("Hello User");\n',
@@ -101,24 +102,85 @@ function renderInline(text) {
     }
     return part;
   });
-}
-
-export default function Scanner() {
+}export default function Scanner() {
   const location = useLocation();
-  const [language, setLanguage] = useState('javascript');
-  const [code, setCode] = useState(DEFAULT_CODE['javascript']);
-  const [results, setResults] = useState([]);
-  const [hasScanned, setHasScanned] = useState(false);
-  const [showEditor, setShowEditor] = useState(true); // Mobile toggle
 
+  // HEALING INITIALIZATION: Lazy initializers ensure state is restored BEFORE first render
+  const [language, setLanguage] = useState(() => {
+    const saved = sessionStorage.getItem('devguard_scanner_state');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return state.language || 'javascript';
+      } catch (e) {}
+    }
+    return 'javascript';
+  });
+
+  const [code, setCode] = useState(() => {
+    // Priority 1: Navigation State (e.g. from History)
+    if (location.state?.restoreCode) return location.state.restoreCode;
+    
+    // Priority 2: Session Storage (Auto-save)
+    const saved = sessionStorage.getItem('devguard_scanner_state');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        if (state.code) return state.code;
+      } catch (e) {}
+    }
+    
+    // Priority 3: Default Template
+    return DEFAULT_CODE['javascript'];
+  });
+
+  const [results, setResults] = useState(() => {
+    const saved = sessionStorage.getItem('devguard_scanner_state');
+    if (saved) {
+      try { return JSON.parse(saved).results || []; } catch (e) {}
+    }
+    return [];
+  });
+
+  const [hasScanned, setHasScanned] = useState(() => {
+    const saved = sessionStorage.getItem('devguard_scanner_state');
+    if (saved) {
+      try { return JSON.parse(saved).hasScanned || false; } catch (e) {}
+    }
+    return false;
+  });
+
+  const [aiResult, setAiResult] = useState(() => {
+    const saved = sessionStorage.getItem('devguard_scanner_state');
+    if (saved) {
+      try { return JSON.parse(saved).aiResult || null; } catch (e) {}
+    }
+    return null;
+  });
+
+  const [aiError, setAiError] = useState(() => {
+    const saved = sessionStorage.getItem('devguard_scanner_state');
+    if (saved) {
+      try { return JSON.parse(saved).aiError || null; } catch (e) {}
+    }
+    return null;
+  });
+
+  const [showEditor, setShowEditor] = useState(true); // Mobile toggle
   const [currentScanId, setCurrentScanId] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiError, setAiError] = useState(null);
-  const [aiResult, setAiResult] = useState(null);
+  const [isScanning, setIsScanning] = useState(false); // UX Delay State
   const [showDiff, setShowDiff] = useState(false);
 
   const { scans, saveScan, toggleBookmark } = useScans();
+
+  // Save changes to session storage for cross-page persistence
+  useEffect(() => {
+    const state = { code, language, results, hasScanned, aiResult, aiError };
+    sessionStorage.setItem('devguard_scanner_state', JSON.stringify(state));
+  }, [code, language, results, hasScanned, aiResult, aiError]);
+
 
   useEffect(() => {
     const existingScan = scans.find(s => s.code === code);
@@ -155,26 +217,59 @@ export default function Scanner() {
   };
 
   const handleScan = async () => {
+    if (!code.trim()) return;
+    
+    setIsScanning(true);
+    setResults([]);
+    setHasScanned(false);
+    setAiResult(null);
+    setAiError(null);
+    
+    // DELIBERATE UX DELAY: 4.5 seconds of simulated "Heuristic Multi-Layer Analysis"
+    await new Promise(resolve => setTimeout(resolve, 4500));
+    
     const findings = analyzeCode(code);
     setResults(findings);
     setHasScanned(true);
-    setAiResult(null); setShowDiff(false); setIsBookmarked(false); setAiError(null);
+    setIsScanning(false);
+    
     // On mobile: switch to results panel
     setShowEditor(false);
-    if (findings.length > 0) {
-      try {
-        const scanId = await saveScan(code, findings);
-        setCurrentScanId(scanId);
-      } catch (err) { console.error('Auto-save failed', err); }
+    
+    // Auto-save EVERY scan to history
+    try {
+      const scanId = await saveScan(code, findings);
+      setCurrentScanId(scanId);
+    } catch (err) { 
+      console.error('Auto-save failed', err); 
     }
   };
 
-  const handleClear = () => { setCode(DEFAULT_CODE[language]); resetScanState(); setShowEditor(true); };
+  const handleClear = () => { setCode(''); resetScanState(); setShowEditor(true); };
+  const handleReset = () => { setCode(DEFAULT_CODE[language]); resetScanState(); };
 
   const handleBookmarkToggle = async () => {
-    if (!currentScanId) return;
-    try { await toggleBookmark(currentScanId, isBookmarked); setIsBookmarked(!isBookmarked); }
-    catch(err) { console.error(err); }
+    let scanId = currentScanId;
+    
+    // If not saved yet (e.g. user clicked bookmark before or instead of scan), save it now
+    if (!scanId) {
+      try {
+        const findings = hasScanned ? results : analyzeCode(code);
+        if (!hasScanned) { setResults(findings); setHasScanned(true); }
+        scanId = await saveScan(code, findings);
+        setCurrentScanId(scanId);
+      } catch (err) {
+        console.error('Failed to save for bookmark:', err);
+        return;
+      }
+    }
+
+    try { 
+      await toggleBookmark(scanId, isBookmarked); 
+      setIsBookmarked(!isBookmarked); 
+    } catch(err) { 
+      console.error(err); 
+    }
   };
 
   const handleGeminiAnalyze = async () => {
@@ -240,21 +335,45 @@ export default function Scanner() {
             <Code2 size={15} className="text-cyber-primary shrink-0" />
             <span className="text-white text-xs font-bold tracking-widest uppercase hidden sm:block">Workspace</span>
             <div className="w-px h-4 bg-[#262626] hidden sm:block" />
-            <select
+            <CustomDropdown
+              options={[
+                { value: 'javascript', label: 'JavaScript / TypeScript' },
+                { value: 'python', label: 'Python' },
+                { value: 'java', label: 'Java / C#' },
+                { value: 'php', label: 'PHP' },
+                { value: 'shell', label: 'Shell Script' },
+                { value: 'go', label: 'Go' },
+                { value: 'cpp', label: 'C / C++' },
+                { value: 'rust', label: 'Rust' },
+                { value: 'react', label: 'React (JSX)' },
+                { value: 'angular', label: 'Angular' },
+                { value: 'vue', label: 'Vue.js' },
+                { value: 'svelte', label: 'Svelte' },
+                { value: 'ruby', label: 'Ruby' },
+                { value: 'swift', label: 'Swift' },
+                { value: 'kotlin', label: 'Kotlin' },
+                { value: 'docker', label: 'Dockerfile' },
+              ]}
               value={language}
-              onChange={handleLanguageChange}
-              className="bg-transparent text-cyber-primary text-xs border-none outline-none cursor-pointer min-w-0 max-w-[120px] md:max-w-none"
-            >
-              {[
-                ['javascript','JavaScript / TypeScript'],['python','Python'],['java','Java / C#'],
-                ['php','PHP'],['shell','Shell Script'],['go','Go'],['cpp','C / C++'],
-                ['rust','Rust'],['react','React (JSX)'],['angular','Angular'],
-                ['vue','Vue.js'],['svelte','Svelte'],['ruby','Ruby'],
-                ['swift','Swift'],['kotlin','Kotlin'],['docker','Dockerfile'],
-              ].map(([v, l]) => <option key={v} value={v} className="bg-[#0A0A0A]">{l}</option>)}
-            </select>
+              onChange={(val) => {
+                setLanguage(val);
+                // Only change code if it's currently default for previous language
+                if (code === DEFAULT_CODE[language]) {
+                   setCode(DEFAULT_CODE[val]);
+                }
+                resetScanState();
+              }}
+            />
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[#262626] text-[#737373] hover:text-white hover:bg-white/5 rounded-lg text-[11px] font-semibold transition-all"
+              title="Reset to default code"
+            >
+              <RotateCcw size={13} />
+              <span className="hidden md:inline">Reset</span>
+            </button>
             <button onClick={handleDownload} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 border border-[#262626] text-[#737373] hover:text-white hover:bg-white/5 rounded-lg text-[11px] font-semibold transition-all" title="Download">
               <Download size={13} /> <span className="hidden md:inline">Download</span>
             </button>
@@ -263,10 +382,17 @@ export default function Scanner() {
             </button>
             <button
               onClick={handleScan}
-              disabled={showDiff}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-cyber-primary text-black font-bold rounded-lg text-[11px] uppercase tracking-widest hover:bg-cyber-primary-hover transition-all disabled:opacity-50 shadow-[0_0_12px_rgba(74,222,128,0.3)]"
+              disabled={showDiff || isScanning}
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-cyber-primary text-black font-bold rounded-lg text-[11px] uppercase tracking-widest hover:bg-cyber-primary-hover transition-all disabled:opacity-50 shadow-[0_0_12px_rgba(74,222,128,0.3)] min-w-[90px] justify-center"
             >
-              <Play size={13} fill="currentColor" /> <span>Scan</span>
+              {isScanning ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  <span>Scanning...</span>
+                </div>
+              ) : (
+                <><Play size={13} fill="currentColor" /> <span>Scan</span></>
+              )}
             </button>
           </div>
         </div>
@@ -322,14 +448,30 @@ export default function Scanner() {
           )}
         </div>
 
-        {/* Results scroll area */}
         <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
-          {!hasScanned ? (
+          {!hasScanned && !isScanning ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-[#525252] gap-4 border border-dashed border-[#262626] rounded-2xl p-8">
               <ShieldAlert size={40} className="text-[#262626]" />
               <div>
                 <p className="text-sm font-semibold text-[#737373] mb-1">Ready to Scan</p>
                 <p className="text-xs text-[#525252]">Paste code into the editor and click Scan to detect vulnerabilities.</p>
+              </div>
+            </div>
+          ) : isScanning ? (
+            /* ── Scanning Animation ── */
+            <div className="h-full flex flex-col items-center justify-center text-center gap-6 p-8">
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-cyber-primary/10 border-t-cyber-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ShieldAlert size={28} className="text-cyber-primary animate-pulse" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-sm tracking-widest uppercase mb-2 animate-pulse">Running Deep Scan</h3>
+                <p className="text-[#525252] text-xs max-w-[200px]">Checking for memory leaks, SQL injection, and hardcoded secrets...</p>
+              </div>
+              <div className="w-full bg-[#1A1A1A] h-1 rounded-full overflow-hidden">
+                <div className="bg-cyber-primary h-full animate-[progress_4.5s_linear]" style={{ width: '100%' }} />
               </div>
             </div>
           ) : aiResult ? (
@@ -401,8 +543,7 @@ export default function Scanner() {
               <>
                 <button
                   onClick={handleBookmarkToggle}
-                  disabled={!currentScanId}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 border rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all disabled:opacity-40 ${isBookmarked ? 'bg-cyber-primary/10 border-cyber-primary text-cyber-primary' : 'border-[#262626] text-[#737373] hover:text-white hover:border-[#404040]'}`}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 border rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all ${isBookmarked ? 'bg-cyber-primary/10 border-cyber-primary text-cyber-primary' : 'border-[#262626] text-[#737373] hover:text-white hover:border-[#404040]'}`}
                 >
                   {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
                   <span className="hidden sm:inline">{isBookmarked ? 'Saved' : 'Bookmark'}</span>

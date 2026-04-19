@@ -21,14 +21,7 @@ export default function Preloader() {
         Initializing Security Environment...
       </p>
 
-      <style jsx>{`
-        @keyframes scan {
-          0%, 100% { transform: translateY(0); opacity: 0; }
-          10% { opacity: 1; }
-          50% { transform: translateY(64px); opacity: 1; }
-          90% { opacity: 0; }
-        }
-      `}</style>
+
     </div>
   );
 }

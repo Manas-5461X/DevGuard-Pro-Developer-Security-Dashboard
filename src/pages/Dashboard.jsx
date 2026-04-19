@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useScans } from '../hooks/useScans';
 import { useAuth } from '../hooks/useAuth';
-import { ShieldAlert, FileCode2, History, RefreshCw, Shield } from 'lucide-react';
+import { ShieldAlert, FileCode2, History, RefreshCw, Shield, Eye, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 function LoadingBar() {
   return (
@@ -44,22 +45,27 @@ function FirstLoadScreen() {
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
-  const { scans, loading, refreshing, getStats } = useScans();
+  const { scans, loading, refreshing, getStats, toggleBookmark } = useScans();
+  const navigate = useNavigate();
   
   const stats = useMemo(() => getStats(), [scans, getStats]);
   const bookmarkedScans = useMemo(() => scans.filter(s => s.isBookmarked), [scans]);
 
-  // Only show the full loading screen on absolute first load (no cached data)
+  const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Developer';
+
+  const handleViewCode = (code) => {
+    navigate('/scanner', { state: { restoreCode: code } });
+  };
+
   if (loading) {
     return <FirstLoadScreen />;
   }
-
-  const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Developer';
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Subtle refresh indicator */}
       {refreshing && <LoadingBar />}
+
 
       <div className="border-b border-[#262626] pb-4 mb-8">
         <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Welcome, {displayName}</h1>
@@ -123,7 +129,8 @@ export default function Dashboard() {
                 <tr className="border-b border-[#1A1A1A]">
                   <th className="text-[#525252] font-semibold text-[10px] uppercase tracking-widest p-4">Snippet</th>
                   <th className="text-[#525252] font-semibold text-[10px] uppercase tracking-widest p-4 text-center">Issues</th>
-                  <th className="text-[#525252] font-semibold text-[10px] uppercase tracking-widest p-4 text-right">Status</th>
+                  <th className="text-[#525252] font-semibold text-[10px] uppercase tracking-widest p-4 text-center">Status</th>
+                  <th className="text-[#525252] font-semibold text-[10px] uppercase tracking-widest p-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1A1A1A]">
@@ -136,16 +143,34 @@ export default function Dashboard() {
                       </p>
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`font-bold text-sm ${scan.issueCount > 0 ? 'text-[#f59e0b]' : 'text-[#525252]'}`}>
+                      <span className={`font-bold text-sm ${scan.issueCount > 0 ? 'text-[#f59e0b]' : 'text-cyber-primary'}`}>
                         {scan.issueCount}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-center">
                       {scan.issueCount > 0 ? (
-                        <span className="text-cyber-error text-[10px] font-bold uppercase tracking-widest bg-cyber-error/10 px-2 py-1 rounded-full">Vulnerable</span>
+                        <span className="text-cyber-error text-[9px] font-bold uppercase tracking-widest bg-cyber-error/10 border border-cyber-error/20 px-2 py-1 rounded-full">Vulnerable</span>
                       ) : (
-                        <span className="text-cyber-primary text-[10px] font-bold uppercase tracking-widest bg-cyber-primary/10 px-2 py-1 rounded-full">Secure</span>
+                        <span className="text-cyber-primary text-[9px] font-bold uppercase tracking-widest bg-cyber-primary/10 border border-cyber-primary/20 px-2 py-1 rounded-full">Secure</span>
                       )}
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleViewCode(scan.code)}
+                          className="p-2 text-[#525252] hover:text-cyber-primary hover:bg-cyber-primary/10 rounded-lg transition-all"
+                          title="View Code in Scanner"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => toggleBookmark(scan.id, true)}
+                          className="p-2 text-[#525252] hover:text-cyber-error hover:bg-cyber-error/10 rounded-lg transition-all"
+                          title="Remove bookmark"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

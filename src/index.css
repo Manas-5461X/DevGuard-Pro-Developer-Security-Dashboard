@@ -49,3 +49,21 @@
 .cyber-panel {
   @apply bg-cyber-surface border border-cyber-border rounded-2xl shadow-lg relative transition-all duration-300;
 }
+
+/* Documentation Utilities */
+.doc-section {
+  scroll-margin-top: 100px;
+}
+
+@keyframes scan {
+  0%, 100% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translateY(64px); opacity: 1; }
+  90% { opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+

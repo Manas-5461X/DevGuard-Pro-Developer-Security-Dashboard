@@ -60,12 +60,12 @@ const mdComponents = {
     </li>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-cyber-primary/40 pl-4 py-1 my-4 bg-cyber-primary/5 rounded-r-lg">
-      <div className="text-[#A3A3A3] text-[14px] italic">{children}</div>
+    <blockquote className="border-l-4 border-cyber-primary/40 pl-5 py-2 my-6 bg-cyber-primary/5 rounded-r-xl border-dashed">
+      <div className="text-[#D4D4D4] text-[15px] italic leading-relaxed">{children}</div>
     </blockquote>
   ),
-  strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-  em: ({ children }) => <em className="text-cyber-primary/90">{children}</em>,
+  strong: ({ children }) => <strong className="text-white font-bold bg-white/5 px-1 rounded">{children}</strong>,
+  em: ({ children }) => <em className="text-cyber-primary/95 not-italic font-medium border-b border-cyber-primary/30">{children}</em>,
   hr: () => <hr className="border-[#1A1A1A] my-8" />,
   a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyber-primary hover:underline">{children}</a>,
   table: ({ children }) => (
@@ -78,7 +78,7 @@ const mdComponents = {
 };
 
 export default function Docs() {
-  const [activeSection, setActiveSection] = useState(docsContent[0].id);
+  const [activeSection, setActiveSection] = useState(docsContent?.[0]?.id || '');
   const [mobileTocOpen, setMobileTocOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const sectionRefs = useRef({});
@@ -87,6 +87,8 @@ export default function Docs() {
   // IntersectionObserver-based scroll spy — attached to the real scroll container
   useEffect(() => {
     const scrollEl = document.getElementById('main-scroll');
+    if (!scrollEl || !docsContent?.length) return;
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -101,6 +103,7 @@ export default function Docs() {
     });
     return () => observerRef.current?.disconnect();
   }, []);
+
 
   // Re-observe when refs are populated
   const registerRef = useCallback((id, el) => {
@@ -117,19 +120,13 @@ export default function Docs() {
     return () => scrollEl.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Navigate using the #main-scroll container's scrollTop
+  // Navigate using the native scrollIntoView with CSS scroll-margin-top
   const scrollToSection = useCallback((id) => {
     const el = sectionRefs.current[id];
-    const container = document.getElementById('main-scroll');
-    if (!el || !container) return;
-    // offsetTop relative to the scroll container
-    let offset = 0;
-    let node = el;
-    while (node && node !== container) {
-      offset += node.offsetTop;
-      node = node.offsetParent;
-    }
-    container.scrollTo({ top: offset - 100, behavior: 'smooth' });
+    if (!el) return;
+    
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
     setActiveSection(id);
     setMobileTocOpen(false);
   }, []);
@@ -207,6 +204,7 @@ export default function Docs() {
                 key={chapter.id}
                 id={chapter.id}
                 ref={el => registerRef(chapter.id, el)}
+                className="doc-section"
               >
                 {/* Chapter header */}
                 <div className="flex items-start gap-4 mb-10">

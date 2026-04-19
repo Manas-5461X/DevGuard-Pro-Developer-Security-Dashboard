@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useScans } from '../hooks/useScans';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Bookmark, BookmarkCheck, RotateCcw, RefreshCw, Clock, Shield } from 'lucide-react';
+import { Trash2, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Bookmark, BookmarkCheck, RotateCcw, RefreshCw, Clock, Shield, Eye } from 'lucide-react';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 function FirstLoadScreen() {
   return (
@@ -31,14 +32,15 @@ function FirstLoadScreen() {
 export default function History() {
   const { scans, loading, refreshing, removeScan, toggleBookmark, refetch } = useScans();
   const [expandedScan, setExpandedScan] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
   const navigate = useNavigate();
 
   const toggleExpand = (id) => setExpandedScan(prev => prev === id ? null : id);
 
-  const handleDelete = async (e, id) => {
-    e.stopPropagation();
-    if (window.confirm('Delete this scan log? This cannot be undone.')) {
-      await removeScan(id);
+  const confirmDelete = async () => {
+    if (deleteModal.id) {
+      await removeScan(deleteModal.id);
+      setDeleteModal({ isOpen: false, id: null });
     }
   };
 
@@ -129,11 +131,10 @@ export default function History() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={e => handleRestore(e, scan.code)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-[#262626] text-[#737373] hover:text-white hover:border-[#404040] rounded-lg text-[11px] font-semibold transition-all"
-                    title="Restore this code to the Scanner"
+                    className="p-1.5 border border-[#262626] text-[#737373] hover:text-cyber-primary hover:border-cyber-primary/40 rounded-lg transition-all"
+                    title="View Code in Scanner"
                   >
-                    <RotateCcw size={12} />
-                    <span className="hidden sm:inline">Restore</span>
+                    <Eye size={14} />
                   </button>
                   <button
                     onClick={e => { e.stopPropagation(); toggleBookmark(scan.id, scan.isBookmarked); }}
@@ -143,7 +144,7 @@ export default function History() {
                     {scan.isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
                   </button>
                   <button
-                    onClick={e => handleDelete(e, scan.id)}
+                    onClick={e => { e.stopPropagation(); setDeleteModal({ isOpen: true, id: scan.id }); }}
                     className="p-1.5 border border-[#262626] text-[#737373] hover:text-cyber-error hover:border-cyber-error/40 rounded-lg transition-all"
                     title="Delete this record"
                   >
@@ -190,6 +191,16 @@ export default function History() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Delete Scan Log?"
+        message="This will permanently remove this record from your security history. This action cannot be undone."
+        confirmText="Permanently Delete"
+      />
     </div>
   );
 }

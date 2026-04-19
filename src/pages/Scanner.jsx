@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import { analyzeCode } from '../utils/analyzer';
 import { useScans } from '../hooks/useScans';
@@ -25,6 +26,7 @@ const DEFAULT_CODE = {
 };
 
 export default function Scanner() {
+  const location = useLocation();
   const [language, setLanguage] = useState('javascript');
   const [code, setCode] = useState(DEFAULT_CODE['javascript']);
   const [results, setResults] = useState([]);
@@ -41,6 +43,13 @@ export default function Scanner() {
   const [showDiff, setShowDiff] = useState(false);
 
   const { saveScan, toggleBookmark } = useScans();
+
+  useEffect(() => {
+    if (location.state?.restoreCode) {
+      setCode(location.state.restoreCode);
+      resetScanState();
+    }
+  }, [location.state]);
 
   const getMonacoLanguage = (lang) => {
     switch(lang) {

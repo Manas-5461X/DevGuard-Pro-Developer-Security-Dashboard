@@ -48,8 +48,17 @@ export function useScans() {
   const saveScan = async (code, vulnerabilities) => {
     if (!currentUser) return null;
     try {
+      const lines = code.split('\n').filter(l => l.trim().length > 0);
+      const title = lines.length > 0 ? guidelinesCleanTitle(lines[0]) : 'Empty Snippet';
+      
+      function guidelinesCleanTitle(firstLine) {
+         let cleaned = firstLine.replace(/^['"\/\/#\-\s]+/, '').substring(0, 40).trim();
+         return cleaned || 'Unnamed Snippet';
+      }
+
       const payload = {
         userId: currentUser.uid,
+        title: title,
         code: code,
         vulnerabilities: vulnerabilities,
         issueCount: vulnerabilities.length,

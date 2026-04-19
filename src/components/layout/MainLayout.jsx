@@ -53,7 +53,7 @@ export default function MainLayout() {
       </button>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto w-full min-w-0">
+      <main id="main-scroll" className="flex-1 overflow-y-auto w-full min-w-0">
         {/* Mobile top bar */}
         <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-[#0A0A0A]/95 backdrop-blur-sm border-b border-[#1A1A1A]">
           <button

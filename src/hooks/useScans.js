@@ -1,22 +1,32 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useAuth } from './useAuth';
 
 // GLOBAL CACHE: Scoped per-user by uid to prevent data leakage between accounts
 const userScanCache = new Map(); // Map<uid, { scans, fetchTime }>
-const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
+const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 min before a background refresh
 
 export function useScans() {
   const { currentUser } = useAuth();
   const uid = currentUser?.uid;
 
-  // Get this user's cache entry if it exists
-  const userCache = uid ? userScanCache.get(uid) : null;
-  const hasFreshCache = userCache && (Date.now() - userCache.fetchTime < CACHE_STALE_TIME);
+  // STALE-WHILE-REVALIDATE:
+  // 1. Serve whatever is in cache INSTANTLY (no skeleton, no wait)
+  // 2. If cache is stale OR empty, fetch in the background
+  // 3. 'loading' is only true when there is ZERO data to show (absolute first load)
 
-  const [scans, setScans] = useState(hasFreshCache ? userCache.scans : []);
-  const [loading, setLoading] = useState(!hasFreshCache);
+  const getInitialState = () => {
+    if (!uid) return { scans: [], loading: false };
+    const cached = userScanCache.get(uid);
+    if (cached) return { scans: cached.scans, loading: false }; // Serve instantly from cache
+    return { scans: [], loading: true }; // Only show skeleton on very first load for this uid
+  };
+
+  const initial = getInitialState();
+  const [scans, setScans] = useState(initial.scans);
+  const [loading, setLoading] = useState(initial.loading);
+  const [refreshing, setRefreshing] = useState(false); // Subtle background refresh indicator
 
   const fetchScans = useCallback(async (silent = false) => {
     if (!uid) return;
@@ -24,59 +34,70 @@ export function useScans() {
     const cached = userScanCache.get(uid);
     const isStale = !cached || (Date.now() - cached.fetchTime > CACHE_STALE_TIME);
 
-    if (!silent && isStale) setLoading(true);
     if (!isStale && cached) {
+      // Cache is fresh — serve instantly, no network request
       setScans(cached.scans);
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
+    // We have stale/no cache — fetch, but show existing data while we wait
+    if (cached && silent) {
+      // Stale-while-revalidate: show old data, refresh silently
+      setRefreshing(true);
+    } else if (!cached) {
+      // No data at all — show loading
+      setLoading(true);
+    }
+
     try {
-      // NOTE: No orderBy here — avoids composite index requirement which causes slow cold starts.
-      // Client-side sort is instant and Firebase returns results within one round-trip.
-      const q = query(
-        collection(db, 'scans'),
-        where('userId', '==', uid)
-      );
+      const q = query(collection(db, 'scans'), where('userId', '==', uid));
       const querySnapshot = await getDocs(q);
       const scansData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Sort newest first client-side
       scansData.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 
       userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
       setScans(scansData);
     } catch (err) {
       console.error('Error fetching scans:', err);
-      // Even on error, clear loading state so UI doesn't hang
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [uid]);
 
   useEffect(() => {
-    // When user changes, reset state and fetch fresh data for the new user
     if (!uid) {
       setScans([]);
       setLoading(false);
+      setRefreshing(false);
       return;
     }
+
     const cached = userScanCache.get(uid);
-    const isStale = !cached || (Date.now() - cached.fetchTime > CACHE_STALE_TIME);
-    if (isStale) {
-      setScans([]);
-      fetchScans();
+
+    if (!cached) {
+      // First load for this user — fetch and show loading skeleton
+      setLoading(true);
+      fetchScans(false);
     } else {
+      // Serve cached data immediately, then silently refresh in background if stale
       setScans(cached.scans);
       setLoading(false);
+      const isStale = Date.now() - cached.fetchTime > CACHE_STALE_TIME;
+      if (isStale) {
+        fetchScans(true); // Silent background refresh
+      }
     }
-  }, [uid, fetchScans]);
+  }, [uid]); // Do NOT include fetchScans — uid change is the only trigger we need
 
   const saveScan = async (code, vulnerabilities) => {
     if (!uid) return null;
     try {
       const lines = code.split('\n').filter(l => l.trim().length > 0);
       const firstLine = lines[0] || '';
-      let title = firstLine.replace(/^['"\/\/#\-\s]+/, '').substring(0, 50).trim() || 'Unnamed Snippet';
+      let title = firstLine.replace(/^['"\\/\\/#\-\s]+/, '').substring(0, 50).trim() || 'Unnamed Snippet';
 
       const payload = {
         userId: uid,
@@ -89,8 +110,8 @@ export function useScans() {
       };
       const docRef = await addDoc(collection(db, 'scans'), payload);
 
+      // Optimistic: prepend to cache immediately
       const newScan = { id: docRef.id, ...payload, createdAt: { toMillis: () => Date.now() } };
-
       const current = userScanCache.get(uid)?.scans || [];
       const updated = [newScan, ...current];
       userScanCache.set(uid, { scans: updated, fetchTime: Date.now() });
@@ -106,7 +127,7 @@ export function useScans() {
   const toggleBookmark = async (scanId, currentStatus) => {
     if (!uid) return;
     try {
-      // Optimistic update first
+      // Optimistic update — instant UI response
       const current = userScanCache.get(uid)?.scans || [];
       const updated = current.map(s => s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s);
       userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
@@ -115,7 +136,7 @@ export function useScans() {
       await updateDoc(doc(db, 'scans', scanId), { isBookmarked: !currentStatus });
     } catch (err) {
       console.error('Error toggling bookmark:', err);
-      // Revert optimistic update on failure
+      // Revert on failure
       fetchScans(true);
       throw err;
     }
@@ -124,13 +145,16 @@ export function useScans() {
   const removeScan = async (scanId) => {
     if (!uid) return;
     try {
-      await deleteDoc(doc(db, 'scans', scanId));
+      // Optimistic remove
       const current = userScanCache.get(uid)?.scans || [];
       const updated = current.filter(s => s.id !== scanId);
       userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
       setScans(updated);
+
+      await deleteDoc(doc(db, 'scans', scanId));
     } catch (err) {
       console.error('Error deleting scan:', err);
+      fetchScans(true);
       throw err;
     }
   };
@@ -144,5 +168,5 @@ export function useScans() {
     return { totalScans, totalIssues, criticalIssues };
   }, [scans]);
 
-  return { scans, loading, saveScan, toggleBookmark, removeScan, getStats, refetch: fetchScans };
+  return { scans, loading, refreshing, saveScan, toggleBookmark, removeScan, getStats, refetch: fetchScans };
 }

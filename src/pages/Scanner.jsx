@@ -35,6 +35,7 @@ export default function Scanner() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [aiSuggestedCode, setAiSuggestedCode] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
   const { saveScan, toggleBookmark } = useScans();
 
@@ -62,6 +63,7 @@ export default function Scanner() {
     setAiSuggestedCode(null);
     setCurrentScanId(null);
     setIsBookmarked(false);
+    setAiError(null);
   };
 
   const handleScan = async () => {
@@ -70,6 +72,7 @@ export default function Scanner() {
     setHasScanned(true);
     setAiSuggestedCode(null);
     setIsBookmarked(false);
+    setAiError(null);
     
     // Auto-audit logs background save
     if (findings.length > 0) {
@@ -106,11 +109,12 @@ export default function Scanner() {
   const handleGeminiAnalyze = async () => {
     if (!results.length) return;
     setIsAnalyzing(true);
+    setAiError(null);
     try {
       const fixedCode = await analyzeWithGemini(code, results);
       setAiSuggestedCode(fixedCode);
     } catch (err) {
-      alert("AI Remediation failed: " + err.message);
+      setAiError(err.message);
     }
     setIsAnalyzing(false);
   };
@@ -205,6 +209,18 @@ export default function Scanner() {
         </div>
         
         <div className="flex-1 overflow-hidden relative">
+          {aiError && (
+             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-[#1a0f0f] border border-cyber-error p-4 text-cyber-error shadow-2xl flex items-start gap-4 inline-block max-w-[80%] rounded-sm">
+               <ShieldAlert size={24} className="shrink-0 animate-pulse" />
+               <div className="flex-1 relative top-0.5">
+                  <h3 className="font-bold uppercase tracking-widest text-[13px] mb-1">Inference Execution Failed</h3>
+                  <p className="text-xs opacity-90 leading-relaxed font-mono">{aiError}</p>
+               </div>
+               <button onClick={() => setAiError(null)} className="ml-2 text-cyber-error/70 hover:text-cyber-error transition-colors p-1" title="Dismiss">
+                 <Trash2 size={16} />
+               </button>
+             </div>
+          )}
           {aiSuggestedCode ? (
             <>
               <DiffEditor
@@ -320,7 +336,7 @@ export default function Scanner() {
             <button
                onClick={handleGeminiAnalyze}
                disabled={isAnalyzing || aiSuggestedCode !== null}
-               className="flex-[2] flex items-center justify-center gap-2 px-4 py-3 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-widest font-bold text-sm disabled:opacity-50"
+               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-widest font-bold text-sm disabled:opacity-50"
             >
                <Bot size={18} />
                {isAnalyzing ? 'Analyzing Code...' : 'Analyze with Gemini'}

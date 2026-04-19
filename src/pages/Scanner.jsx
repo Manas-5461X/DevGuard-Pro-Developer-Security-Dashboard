@@ -118,26 +118,28 @@ export default function Scanner() {
     setAiError(null);
     setShowDiff(false);
     
-    // PREMIUM UX DELAY
-    await new Promise(r => setTimeout(r, 4500));
+    // Snappy UX for local audit
+    await new Promise(r => setTimeout(r, 800));
     
-    const findings = analyzeCode(code, language);
+    const findings = analyzeCode(code);
     setIsScanning(false);
-    
-    // Auto-save to History IMMEDIATELY
-    let scanId = null;
-    try {
-      scanId = await saveScan(code, findings, language);
-      setCurrentScanId(scanId);
-    } catch (e) { console.error('Save failed', e); }
-
     updateCurrentWorkspace({ results: findings, hasScanned: true });
     setShowEditor(false);
-
-    // AI ESCALATION BRIDGE: Trigger deep audit if local findings are 0
-    if (findings.length === 0) {
-      await handleGeminiAnalyze(code, findings, true, scanId);
-    }
+    
+    // Auto-save to History in background (non-blocking)
+    saveScan(code, findings, language).then(id => {
+      setCurrentScanId(id);
+      // AI ESCALATION BRIDGE: Trigger deep audit if local findings are 0
+      if (findings.length === 0) {
+        handleGeminiAnalyze(code, findings, true, id);
+      }
+    }).catch(e => {
+      console.error('Background save failed', e);
+      // Even if save fails, check if we should escalate to AI
+      if (findings.length === 0) {
+        handleGeminiAnalyze(code, findings, true, null);
+      }
+    });
   };
 
   const handleGeminiAnalyze = async (customCode, customResults, auto = false, passedScanId) => {

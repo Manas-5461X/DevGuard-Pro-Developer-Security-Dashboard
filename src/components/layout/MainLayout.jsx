@@ -21,7 +21,7 @@ export default function MainLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#0A0A0A] text-[#E5E5E5] font-sans overflow-hidden relative">
+    <div className="flex h-screen bg-cyber-bg text-cyber-text font-sans overflow-hidden relative transition-colors duration-300">
       
       {/* Mobile overlay backdrop */}
       {isMobileOpen && (
@@ -55,10 +55,10 @@ export default function MainLayout() {
       {/* Main content */}
       <main id="main-scroll" className="flex-1 overflow-y-auto w-full min-w-0">
         {/* Mobile top bar */}
-        <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-[#0A0A0A]/95 backdrop-blur-sm border-b border-[#1A1A1A]">
+        <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-cyber-bg/95 backdrop-blur-sm border-b border-cyber-border">
           <button
             onClick={() => setIsMobileOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#262626] text-[#A3A3A3] hover:text-white hover:bg-white/5 transition-all"
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-cyber-border text-[#A3A3A3] hover:text-white hover:bg-white/5 transition-all"
           >
             <Menu size={18} />
           </button>

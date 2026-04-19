@@ -1,10 +1,12 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Shield, LayoutDashboard, History, LogOut, BookOpen, X } from 'lucide-react';
+import { Shield, LayoutDashboard, History, LogOut, BookOpen, X, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
   const { logout, currentUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const navItems = [
@@ -60,7 +62,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
     <>
       {/* Mobile sidebar (fixed overlay) */}
       <aside className={`
-        fixed top-0 left-0 h-full z-50 w-[260px] bg-[#0A0A0A] border-r border-[#1A1A1A]
+        fixed top-0 left-0 h-full z-50 w-[260px] bg-cyber-bg border-r border-cyber-border
         flex flex-col transition-transform duration-300 ease-in-out
         lg:hidden
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -72,6 +74,8 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
           userInitial={userInitial}
           displayEmail={displayEmail}
           handleLogout={handleLogout}
+          theme={theme}
+          toggleTheme={toggleTheme}
           isCollapsed={false}
           showClose={true}
           onClose={onMobileClose}
@@ -80,8 +84,8 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
 
       {/* Desktop sidebar (sticky left panel) */}
       <aside className={`
-        hidden lg:flex flex-col flex-shrink-0 h-full border-r border-[#1A1A1A]
-        bg-[#0A0A0A] transition-all duration-300 ease-in-out
+        hidden lg:flex flex-col flex-shrink-0 h-full border-r border-cyber-border
+        bg-cyber-bg transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-[72px]' : 'w-[256px]'}
       `}>
         <SidebarContent
@@ -91,6 +95,8 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
           userInitial={userInitial}
           displayEmail={displayEmail}
           handleLogout={handleLogout}
+          theme={theme}
+          toggleTheme={toggleTheme}
           isCollapsed={isCollapsed}
           showClose={false}
         />
@@ -99,11 +105,11 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
   );
 }
 
-function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEmail, handleLogout, isCollapsed, showClose, onClose }) {
+function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEmail, handleLogout, theme, toggleTheme, isCollapsed, showClose, onClose }) {
   return (
     <>
       {/* Header */}
-      <div className={`flex items-center gap-3 px-4 py-5 border-b border-[#1A1A1A] ${isCollapsed ? 'justify-center' : ''}`}>
+      <div className={`flex items-center gap-3 px-4 py-5 border-b border-cyber-border ${isCollapsed ? 'justify-center' : ''}`}>
         {showClose && (
           <button onClick={onClose} className="mr-auto text-[#737373] hover:text-white transition-colors p-1">
             <X size={18} />
@@ -126,7 +132,7 @@ function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEm
       </div>
 
       {/* User profile */}
-      <div className={`px-3 py-4 border-b border-[#1A1A1A] ${isCollapsed ? 'flex justify-center' : ''}`}>
+      <div className={`px-3 py-4 border-b border-cyber-border ${isCollapsed ? 'flex justify-center' : ''}`}>
         <div className={`flex items-center gap-3 ${isCollapsed ? '' : 'px-1'}`}>
           <div className="w-9 h-9 rounded-xl bg-cyber-primary flex items-center justify-center text-black font-bold text-sm shrink-0 shadow-[0_0_12px_rgba(74,222,128,0.15)]">
             {userInitial}
@@ -151,11 +157,19 @@ function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEm
       </nav>
 
       {/* Footer */}
-      <div className={`px-3 py-4 border-t border-[#1A1A1A] ${isCollapsed ? 'flex justify-center' : ''}`}>
+      <div className={`px-3 py-4 border-t border-cyber-border space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+        <button
+          onClick={toggleTheme}
+          title={isCollapsed ? `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode` : ''}
+          className={`flex items-center gap-2 text-cyber-dark-text hover:text-cyber-primary hover:bg-cyber-primary/10 rounded-xl transition-all text-[13px] font-medium ${isCollapsed ? 'w-10 h-10 justify-center' : 'w-full px-3 py-2.5'}`}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          {!isCollapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+        </button>
         <button
           onClick={handleLogout}
           title={isCollapsed ? 'Sign Out' : ''}
-          className={`flex items-center gap-2 text-[#737373] hover:text-cyber-error hover:bg-cyber-error/10 rounded-xl transition-all text-[13px] font-medium ${isCollapsed ? 'w-10 h-10 justify-center' : 'w-full px-3 py-2.5'}`}
+          className={`flex items-center gap-2 text-cyber-dark-text hover:text-cyber-error hover:bg-cyber-error/10 rounded-xl transition-all text-[13px] font-medium ${isCollapsed ? 'w-10 h-10 justify-center' : 'w-full px-3 py-2.5'}`}
         >
           <LogOut size={16} />
           {!isCollapsed && <span>Sign Out</span>}

@@ -10,16 +10,22 @@ const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 min
 // HELPERS: LocalStorage Persistence
 const getPersistedCache = () => {
   try {
-    const saved = localStorage.getItem('devguard_scan_cache_v3');
+    const saved = localStorage.getItem('devguard_scan_cache_v4');
     if (!saved) return new Map();
-    return new Map(JSON.parse(saved));
-  } catch (e) { return new Map(); }
+    const data = JSON.parse(saved);
+    // Backward compatibility: ensure it's a valid array before conversion
+    if (!Array.isArray(data)) return new Map();
+    return new Map(data);
+  } catch (e) { 
+    console.error('Cache hydration failed', e);
+    return new Map(); 
+  }
 };
 
 const savePersistedCache = (cache) => {
   try {
     const data = JSON.stringify(Array.from(cache.entries()));
-    localStorage.setItem('devguard_scan_cache_v3', data);
+    localStorage.setItem('devguard_scan_cache_v4', data);
   } catch (e) {}
 };
 
@@ -33,6 +39,7 @@ export function ScanProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // FETCH: Bridging Cloud & Local Storage
   const fetchScans = useCallback(async (options = { silent: false, force: false }) => {
     if (!uid) return;
 
@@ -57,7 +64,13 @@ export function ScanProvider({ children }) {
       const q = query(collection(db, 'scans'), where('userId', '==', uid));
       const querySnapshot = await getDocs(q);
       const scansData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      scansData.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      
+      // Sort by creation time (most recent first)
+      scansData.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || 0;
+        const timeB = b.createdAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
 
       userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
       savePersistedCache(userScanCache);
@@ -70,7 +83,7 @@ export function ScanProvider({ children }) {
     }
   }, [uid]);
 
-  // Handle Auth Changes
+  // Handle Auth Changes: Crucial for persistence
   useEffect(() => {
     if (!uid) {
       setScans([]);
@@ -81,28 +94,22 @@ export function ScanProvider({ children }) {
     const cached = userScanCache.get(uid);
     if (cached) {
       setScans(cached.scans);
-      setLoading(false);
-      // Background refresh if stale
-      if (Date.now() - cached.fetchTime > CACHE_STALE_TIME) {
-        fetchScans({ silent: true });
-      }
+      // Even if cached, do a silent background refresh to ensure consistency
+      fetchScans({ silent: true });
     } else {
       fetchScans();
     }
   }, [uid, fetchScans]);
 
-  const saveScan = async (code, vulnerabilities) => {
+  const saveScan = async (code, vulnerabilities, language) => {
     if (!uid) return null;
     try {
       // Improved Naming logic
       const lines = code.split('\n').map(l => l.trim()).filter(l => {
-        return l.length > 0 && 
-               !/^(?:\/\/|#|\/\*|\*)/.test(l) && 
-               !l.toLowerCase().includes('paste your'); // Skip the placeholder comment
+        return l.length > 0 && !/^(?:\/\/|#|\/\*|\*)/.test(l) && !l.toLowerCase().includes('paste your');
       });
       
       const firstLine = lines[0] || 'Clean Snippet';
-      // More aggressive strip: remove all non-alphanumeric from the start
       let baseTitle = firstLine.replace(/^[^a-zA-Z0-9]+/, '').substring(0, 35).trim() || 'Untitled Scan';
       const shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
       const title = `${baseTitle} #${shortId}`;
@@ -120,6 +127,7 @@ export function ScanProvider({ children }) {
         userId: uid,
         title,
         code,
+        language: language || 'javascript',
         vulnerabilities,
         issueCount: vulnerabilities.length,
         isBookmarked: false,
@@ -141,11 +149,24 @@ export function ScanProvider({ children }) {
     }
   };
 
+  const updateScan = async (scanId, data) => {
+    if (!uid) return;
+    try {
+      const updatedScans = scans.map(s => s.id === scanId ? { ...s, ...data } : s);
+      setScans(updatedScans);
+      userScanCache.set(uid, { scans: updatedScans, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
+      savePersistedCache(userScanCache);
+      await updateDoc(doc(db, 'scans', scanId), data);
+    } catch (err) {
+      console.error('Error updating scan:', err);
+    }
+  };
+
   const toggleBookmark = async (scanId, currentStatus) => {
     if (!uid) return;
     try {
       const updated = scans.map(s => s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s);
-      setScans(updated); // Sync UI
+      setScans(updated);
       userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
       savePersistedCache(userScanCache);
       await updateDoc(doc(db, 'scans', scanId), { isBookmarked: !currentStatus });
@@ -183,6 +204,7 @@ export function ScanProvider({ children }) {
     loading,
     refreshing,
     saveScan,
+    updateScan,
     toggleBookmark,
     removeScan,
     getStats,

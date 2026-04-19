@@ -44,9 +44,9 @@ export default function History() {
     }
   };
 
-  const handleRestore = (e, code) => {
+  const handleRestore = (e, code, language) => {
     e.stopPropagation();
-    navigate('/scanner', { state: { restoreCode: code } });
+    navigate('/scanner', { state: { restoreCode: code, restoreLanguage: language || 'javascript' } });
   };
 
   // Only show full loading screen on very first load (no cached data)
@@ -113,6 +113,13 @@ export default function History() {
                       {scan.createdAt ? new Date(scan.createdAt.toMillis()).toLocaleString() : 'Just now'}
                     </p>
                   </div>
+                  {/* Language badge */}
+                  <div className="shrink-0 hidden md:block">
+                    <p className="text-[#737373] text-[10px] font-bold uppercase tracking-widest mb-0.5">Engine</p>
+                    <span className="text-[#A3A3A3] text-[11px] font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded uppercase">
+                      {scan.language || 'JS'}
+                    </span>
+                  </div>
                   {/* Status badge */}
                   <div className="shrink-0">
                     {scan.issueCount > 0 ? (
@@ -130,7 +137,7 @@ export default function History() {
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={e => handleRestore(e, scan.code)}
+                    onClick={e => handleRestore(e, scan.code, scan.language)}
                     className="p-1.5 border border-[#262626] text-[#737373] hover:text-cyber-primary hover:border-cyber-primary/40 rounded-lg transition-all"
                     title="View Code in Scanner"
                   >

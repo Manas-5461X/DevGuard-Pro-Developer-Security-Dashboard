@@ -1,8 +1,8 @@
 import { useScanContext } from '../context/ScanContext';
 
 /**
- * useScans hook (DEPRECATED: Now uses ScanContext for global sync)
- * Maintained as a proxy for backward compatibility.
+ * useScans hook
+ * Proxy to ScanContext for global state synchronization.
  */
 export function useScans() {
   return useScanContext();

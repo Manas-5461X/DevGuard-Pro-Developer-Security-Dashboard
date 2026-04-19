@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ScanProvider } from './context/ScanContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 import MainLayout from './components/layout/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -34,7 +35,8 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ScanProvider>
+        <ThemeProvider>
+          <ScanProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -68,8 +70,9 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ScanProvider>
-      </AuthProvider>
-    </BrowserRouter>
+      </ThemeProvider>
+    </AuthProvider>
+  </BrowserRouter>
   );
 }
 

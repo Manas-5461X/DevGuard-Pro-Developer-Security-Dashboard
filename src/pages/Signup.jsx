@@ -57,7 +57,7 @@ export default function Signup() {
         
         {error && (
           <div className="bg-cyber-error/10 border border-cyber-error text-cyber-error p-3 text-sm text-center font-bold tracking-widest uppercase mb-6">
-            >> ERROR: {error}
+            &gt;&gt; ERROR: {error}
           </div>
         )}
 

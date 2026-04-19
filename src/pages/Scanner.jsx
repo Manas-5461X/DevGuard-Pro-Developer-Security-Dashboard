@@ -526,7 +526,16 @@ function renderInline(text) {
                 <button onClick={() => { setAiResult(null); setShowDiff(false); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-cyber-error text-cyber-error hover:bg-cyber-error/10 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all">
                   Reject
                 </button>
-                <button onClick={() => { setCode(aiResult.fixedCode); resetScanState(); }} className="flex-[1.5] flex items-center justify-center gap-1.5 py-2.5 bg-cyber-primary text-black rounded-xl font-bold text-[11px] uppercase tracking-widest hover:bg-cyber-primary-hover transition-all">
+                <button 
+                  onClick={() => { 
+                    const fixed = aiResult.fixedCode;
+                    setCode(fixed); 
+                    resetScanState();
+                    // AUTO-SCAN: Re-run analysis on the fixed code and save to history
+                    setTimeout(() => handleScan(), 50); 
+                  }} 
+                  className="flex-[1.5] flex items-center justify-center gap-1.5 py-2.5 bg-cyber-primary text-black rounded-xl font-bold text-[11px] uppercase tracking-widest hover:bg-cyber-primary-hover transition-all"
+                >
                   <CheckCircle size={14} /> Accept Fix
                 </button>
               </>

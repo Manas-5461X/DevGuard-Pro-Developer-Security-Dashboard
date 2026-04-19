@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ScanProvider } from './context/ScanContext';
 
 import MainLayout from './components/layout/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -33,38 +34,40 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+        <ScanProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout />}>
-              <Route path="/" element={
-                <Suspense fallback={<DashboardSkeleton />}>
-                  <Dashboard />
-                </Suspense>
-              } />
-              <Route path="/scanner" element={
-                <Suspense fallback={<PageLoader />}>
-                  <Scanner />
-                </Suspense>
-              } />
-              <Route path="/history" element={
-                <Suspense fallback={<HistorySkeleton />}>
-                  <History />
-                </Suspense>
-              } />
-              <Route path="/docs" element={
-                <Suspense fallback={<PageLoader />}>
-                  <Docs />
-                </Suspense>
-              } />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/" element={
+                  <Suspense fallback={<DashboardSkeleton />}>
+                    <Dashboard />
+                  </Suspense>
+                } />
+                <Route path="/scanner" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Scanner />
+                  </Suspense>
+                } />
+                <Route path="/history" element={
+                  <Suspense fallback={<HistorySkeleton />}>
+                    <History />
+                  </Suspense>
+                } />
+                <Route path="/docs" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Docs />
+                  </Suspense>
+                } />
+              </Route>
             </Route>
-          </Route>
 
-          {/* 404 catch-all */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* 404 catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ScanProvider>
       </AuthProvider>
     </BrowserRouter>
   );

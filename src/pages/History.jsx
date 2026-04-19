@@ -61,7 +61,7 @@ export default function History() {
           <p className="text-[#737373] text-sm">Archived vulnerability reports and code snapshots.</p>
         </div>
         <button
-          onClick={() => refetch(false)}
+          onClick={() => refetch(true)}
           disabled={refreshing}
           className="flex items-center gap-2 px-3 py-2 border border-[#262626] text-[#737373] hover:text-white hover:border-[#404040] rounded-xl text-xs font-semibold transition-all disabled:opacity-40 mt-1"
           title="Refresh history"

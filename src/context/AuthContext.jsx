@@ -9,6 +9,7 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
+import Preloader from '../components/ui/Preloader';
 
 const AuthContext = createContext();
 
@@ -19,6 +20,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [minDelayComplete, setMinDelayComplete] = useState(false);
 
   function signup(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);
@@ -43,12 +45,19 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    const minimumUXDelay = setTimeout(() => {
+      setMinDelayComplete(true);
+    }, 1200);
+
     const unsubscribe = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      clearTimeout(minimumUXDelay);
+      unsubscribe();
+    };
   }, []);
 
   const value = {
@@ -62,7 +71,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {(loading || !minDelayComplete) ? <Preloader /> : children}
     </AuthContext.Provider>
   );
 }

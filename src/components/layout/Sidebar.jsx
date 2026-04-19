@@ -1,18 +1,19 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Shield, LayoutDashboard, History, LogOut, BookOpen } from 'lucide-react';
+import { Shield, LayoutDashboard, History, LogOut, BookOpen, Settings, User } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function Sidebar() {
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: 'Scanner', path: '/scanner', icon: <Shield size={20} /> },
-    { name: 'History', path: '/history', icon: <History size={20} /> },
-    { name: 'Docs', path: '/docs', icon: <BookOpen size={20} /> },
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={18} /> },
+    { name: 'Scanner', path: '/scanner', icon: <Shield size={18} /> },
+    { name: 'History', path: '/history', icon: <History size={18} /> },
   ];
+
+  const docsItem = { name: 'Documentation', path: '/docs', icon: <BookOpen size={18} /> };
 
   async function handleLogout() {
     try {
@@ -23,44 +24,86 @@ export default function Sidebar() {
     }
   }
 
+  const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U';
+  const displayEmail = currentUser?.email || 'user@devguard.pro';
+
   return (
-    <aside className="w-64 flex-shrink-0 cyber-panel flex flex-col z-10 border-r border-t-0 border-b-0 border-l-0 shadow-[4px_0_30px_rgba(0,255,102,0.02)]">
-      <div className="p-6 flex items-center gap-4 border-b border-cyber-border">
-        <div className="flex items-center justify-center bg-cyber-primary/10 border border-cyber-primary p-2">
-          <Shield className="text-cyber-primary glow-text" size={24} />
+    <aside className="w-[260px] flex-shrink-0 bg-[#0A0A0A] flex flex-col z-10 border-r border-[#262626]">
+      {/* User Block like NXUS */}
+      <div className="p-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cyber-primary flex items-center justify-center text-[#000] font-bold text-lg shrink-0">
+            {userInitial}
+          </div>
+          <div className="overflow-hidden">
+            <p className="text-[#F5F5F5] font-semibold text-sm truncate">User Account</p>
+            <p className="text-[#737373] text-[10px] truncate">{displayEmail}</p>
+          </div>
         </div>
-        <h1 className="text-xl font-bold tracking-widest text-white glow-text uppercase">DevGuard<span className="text-cyber-primary">Pro</span></h1>
       </div>
-      
-      <nav className="flex-1 p-4 flex flex-col gap-2">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.path}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-sm border-l-2 transition-all duration-300 ${
-                isActive
-                  ? 'bg-cyber-primary/10 border-cyber-primary text-cyber-primary shadow-[inset_4px_0_15px_rgba(0,255,102,0.1)]'
-                  : 'border-transparent text-cyber-dark-text hover:text-cyber-primary hover:border-cyber-primary/30 hover:bg-cyber-primary/5'
-              }`
-            }
-          >
-            {item.icon}
-            <span className="tracking-widest font-medium uppercase">{item.name}</span>
-          </NavLink>
-        ))}
+
+      <nav className="flex-1 px-4 flex flex-col gap-6 overflow-y-auto pt-2">
+        {/* Navigation Section */}
+        <div>
+          <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3">
+            Core Protocol
+          </h3>
+          <div className="flex flex-col gap-1">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.name}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium rounded-full transition-all duration-300 ${
+                    isActive
+                      ? 'bg-cyber-primary/10 text-cyber-primary'
+                      : 'text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5'
+                  }`
+                }
+              >
+                {item.icon}
+                <span>{item.name}</span>
+              </NavLink>
+            ))}
+          </div>
+        </div>
+
+        {/* Resources Section */}
+        <div>
+          <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3">
+            Resources
+          </h3>
+          <div className="flex flex-col gap-1">
+            <NavLink
+              to={docsItem.path}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium rounded-full transition-all duration-300 ${
+                  isActive
+                    ? 'bg-cyber-primary/10 text-cyber-primary'
+                    : 'text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5'
+                }`
+              }
+            >
+              {docsItem.icon}
+              <span>{docsItem.name}</span>
+            </NavLink>
+          </div>
+        </div>
       </nav>
 
-      <div className="p-4 border-t border-cyber-border">
+      {/* Logout Actions */}
+      <div className="p-4 mt-auto">
         <button 
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 px-4 py-3 border border-cyber-border text-cyber-dark-text hover:text-cyber-error hover:border-cyber-error/50 hover:bg-cyber-error/10 transition-colors uppercase text-sm tracking-widest"
+          className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors text-[13px] font-medium"
         >
-          <LogOut size={18} />
-          <span>Logout</span>
+          <LogOut size={16} />
+          <span>Sign Out</span>
         </button>
+        <p className="text-center text-[10px] text-[#737373] mt-4 tracking-widest uppercase">
+          DevGuard Pro V1.0
+        </p>
       </div>
     </aside>
   );
 }
-

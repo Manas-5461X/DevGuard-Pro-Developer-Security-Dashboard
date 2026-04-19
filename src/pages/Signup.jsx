@@ -14,16 +14,31 @@ export default function Signup() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setError('');
+    
+    // Basic structural validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return setError('Please enter a valid email address (e.g., name@domain.com)');
+    }
+
+    if (password.length < 6) {
+      return setError('Security protocol requires password length of at least 6 characters');
+    }
+
     if (password !== passwordConfirm) {
       return setError('Passwords do not match');
     }
+
     try {
-      setError('');
       setLoading(true);
       await signup(email, password);
       navigate('/');
     } catch (err) {
-      setError('Failed to create an account. ' + err.message);
+      let customMsg = err.message;
+      if (err.code === 'auth/invalid-email') customMsg = 'Malformed email string detected. Please verify your address format.';
+      if (err.code === 'auth/email-already-in-use') customMsg = 'This identity is already registered in our node.';
+      setError('FATAL: ' + (customMsg || err.message));
     }
     setLoading(false);
   }

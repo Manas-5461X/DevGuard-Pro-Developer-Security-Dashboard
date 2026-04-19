@@ -1,102 +1,109 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '../services/firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, orderBy, updateDoc } from 'firebase/firestore';
 import { useAuth } from './useAuth';
 
-// GLOBAL CACHE: Lives outside the hook instance so it persists across page navigations
-let cachedScans = null;
-let lastFetchTime = 0;
+// GLOBAL CACHE: Scoped per-user by uid to prevent data leakage between accounts
+const userScanCache = new Map(); // Map<uid, { scans, fetchTime }>
 const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
 
 export function useScans() {
-  const [scans, setScans] = useState(cachedScans || []);
-  const [loading, setLoading] = useState(!cachedScans);
   const { currentUser } = useAuth();
+  const uid = currentUser?.uid;
+
+  // Get this user's cache entry if it exists
+  const userCache = uid ? userScanCache.get(uid) : null;
+  const hasFreshCache = userCache && (Date.now() - userCache.fetchTime < CACHE_STALE_TIME);
+
+  const [scans, setScans] = useState(hasFreshCache ? userCache.scans : []);
+  const [loading, setLoading] = useState(!hasFreshCache);
 
   const fetchScans = useCallback(async (silent = false) => {
-    if (!currentUser) return;
-    
-    // If not silent and we have no cache OR cache is stale, show loading
-    const isStale = Date.now() - lastFetchTime > CACHE_STALE_TIME;
-    if (!silent && (!cachedScans || isStale)) {
-        setLoading(true);
+    if (!uid) return;
+
+    const cached = userScanCache.get(uid);
+    const isStale = !cached || (Date.now() - cached.fetchTime > CACHE_STALE_TIME);
+
+    if (!silent && isStale) setLoading(true);
+    if (!isStale && cached) {
+      setScans(cached.scans);
+      setLoading(false);
+      return;
     }
-    
+
     try {
       const q = query(
-        collection(db, 'scans'), 
-        where('userId', '==', currentUser.uid),
+        collection(db, 'scans'),
+        where('userId', '==', uid),
         orderBy('createdAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
-      const scansData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      // Update local state and global cache
+      const scansData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
       setScans(scansData);
-      cachedScans = scansData;
-      lastFetchTime = Date.now();
     } catch (err) {
       console.error('Error fetching scans:', err);
-      // Fallback for missing indexes
-      if (err.message.includes('index')) {
-        const qFallback = query(collection(db, 'scans'), where('userId', '==', currentUser.uid));
-        const snap = await getDocs(qFallback);
-        const scansData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        scansData.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-        setScans(scansData);
-        cachedScans = scansData;
+      if (err.message?.includes('index') || err.code === 'failed-precondition') {
+        try {
+          const qFallback = query(collection(db, 'scans'), where('userId', '==', uid));
+          const snap = await getDocs(qFallback);
+          const scansData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          scansData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+          userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
+          setScans(scansData);
+        } catch (fallbackErr) {
+          console.error('Fallback fetch also failed:', fallbackErr);
+        }
       }
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [uid]);
 
   useEffect(() => {
-    // Only fetch if we have no cache or it's stale
-    const isStale = Date.now() - lastFetchTime > CACHE_STALE_TIME;
-    if (!cachedScans || isStale) {
+    // When user changes, reset state and fetch fresh data for the new user
+    if (!uid) {
+      setScans([]);
+      setLoading(false);
+      return;
+    }
+    const cached = userScanCache.get(uid);
+    const isStale = !cached || (Date.now() - cached.fetchTime > CACHE_STALE_TIME);
+    if (isStale) {
+      setScans([]);
       fetchScans();
     } else {
+      setScans(cached.scans);
       setLoading(false);
     }
-  }, [fetchScans]);
+  }, [uid, fetchScans]);
 
   const saveScan = async (code, vulnerabilities) => {
-    if (!currentUser) return null;
+    if (!uid) return null;
     try {
       const lines = code.split('\n').filter(l => l.trim().length > 0);
-      const title = lines.length > 0 ? guidelinesCleanTitle(lines[0]) : 'Empty Snippet';
-      
-      function guidelinesCleanTitle(firstLine) {
-         let cleaned = firstLine.replace(/^['"\/\/#\-\s]+/, '').substring(0, 40).trim();
-         return cleaned || 'Unnamed Snippet';
-      }
+      const firstLine = lines[0] || '';
+      let title = firstLine.replace(/^['"\/\/#\-\s]+/, '').substring(0, 50).trim() || 'Unnamed Snippet';
 
       const payload = {
-        userId: currentUser.uid,
-        title: title,
-        code: code,
-        vulnerabilities: vulnerabilities,
+        userId: uid,
+        title,
+        code,
+        vulnerabilities,
         issueCount: vulnerabilities.length,
         isBookmarked: false,
         createdAt: serverTimestamp()
       };
       const docRef = await addDoc(collection(db, 'scans'), payload);
-      
-      const newScan = {
-        id: docRef.id,
-        ...payload,
-        createdAt: { toMillis: () => Date.now() } 
-      };
-      
-      // Update cache immediately
-      const updated = [newScan, ...(cachedScans || [])];
+
+      const newScan = { id: docRef.id, ...payload, createdAt: { toMillis: () => Date.now() } };
+
+      const current = userScanCache.get(uid)?.scans || [];
+      const updated = [newScan, ...current];
+      userScanCache.set(uid, { scans: updated, fetchTime: Date.now() });
       setScans(updated);
-      cachedScans = updated;
-      
+
       return docRef.id;
     } catch (err) {
       console.error('Error saving scan:', err);
@@ -105,47 +112,45 @@ export function useScans() {
   };
 
   const toggleBookmark = async (scanId, currentStatus) => {
+    if (!uid) return;
     try {
-      const scanRef = doc(db, 'scans', scanId);
-      await updateDoc(scanRef, {
-        isBookmarked: !currentStatus
-      });
-      
-      // Update cache
-      const updated = (cachedScans || []).map(s => 
-        s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s
-      );
+      // Optimistic update first
+      const current = userScanCache.get(uid)?.scans || [];
+      const updated = current.map(s => s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s);
+      userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
       setScans(updated);
-      cachedScans = updated;
+
+      await updateDoc(doc(db, 'scans', scanId), { isBookmarked: !currentStatus });
     } catch (err) {
       console.error('Error toggling bookmark:', err);
+      // Revert optimistic update on failure
+      fetchScans(true);
       throw err;
     }
   };
 
   const removeScan = async (scanId) => {
+    if (!uid) return;
     try {
       await deleteDoc(doc(db, 'scans', scanId));
-      const updated = (cachedScans || []).filter(scan => scan.id !== scanId);
+      const current = userScanCache.get(uid)?.scans || [];
+      const updated = current.filter(s => s.id !== scanId);
+      userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
       setScans(updated);
-      cachedScans = updated;
     } catch (err) {
       console.error('Error deleting scan:', err);
       throw err;
     }
   };
 
-  const getStats = () => {
-    const activeScans = scans || [];
-    const totalScans = activeScans.length;
-    const totalIssues = activeScans.reduce((acc, scan) => acc + (scan.issueCount || 0), 0);
-    const criticalIssues = activeScans.reduce((acc, scan) => {
-      const crits = scan.vulnerabilities?.filter(v => v.severity === 'critical').length || 0;
-      return acc + crits;
+  const getStats = useCallback(() => {
+    const totalScans = scans.length;
+    const totalIssues = scans.reduce((acc, scan) => acc + (scan.issueCount || 0), 0);
+    const criticalIssues = scans.reduce((acc, scan) => {
+      return acc + (scan.vulnerabilities?.filter(v => v.severity === 'critical').length || 0);
     }, 0);
-    
     return { totalScans, totalIssues, criticalIssues };
-  };
+  }, [scans]);
 
   return { scans, loading, saveScan, toggleBookmark, removeScan, getStats, refetch: fetchScans };
 }

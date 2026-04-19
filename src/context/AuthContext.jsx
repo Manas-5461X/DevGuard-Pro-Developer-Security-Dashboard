@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -6,7 +6,8 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   GithubAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  updateProfile
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import Preloader from '../components/ui/Preloader';
@@ -44,6 +45,14 @@ export function AuthProvider({ children }) {
     return signOut(auth);
   }
 
+  // Update the user's display name and refresh auth state without reloading
+  const updateUserDisplayName = useCallback(async (name) => {
+    if (!auth.currentUser) return;
+    await updateProfile(auth.currentUser, { displayName: name.trim() });
+    // Re-read the updated user from Firebase Auth and sync to React state
+    setCurrentUser({ ...auth.currentUser });
+  }, []);
+
   useEffect(() => {
     const minimumUXDelay = setTimeout(() => {
       setMinDelayComplete(true);
@@ -66,7 +75,8 @@ export function AuthProvider({ children }) {
     signup,
     loginWithGoogle,
     loginWithGithub,
-    logout
+    logout,
+    updateUserDisplayName
   };
 
   return (

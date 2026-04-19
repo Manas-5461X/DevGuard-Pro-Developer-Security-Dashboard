@@ -1,19 +1,18 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Shield, LayoutDashboard, History, LogOut, BookOpen, Settings, User } from 'lucide-react';
+import { Shield, LayoutDashboard, History, LogOut, BookOpen, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
-export default function Sidebar({ isCollapsed }) {
+export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={18} /> },
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={18} />, exact: true },
     { name: 'Scanner', path: '/scanner', icon: <Shield size={18} /> },
     { name: 'History', path: '/history', icon: <History size={18} /> },
+    { name: 'Documentation', path: '/docs', icon: <BookOpen size={18} /> },
   ];
-
-  const docsItem = { name: 'Documentation', path: '/docs', icon: <BookOpen size={18} /> };
 
   async function handleLogout() {
     try {
@@ -24,98 +23,147 @@ export default function Sidebar({ isCollapsed }) {
     }
   }
 
-  const displayName = currentUser?.displayName || 'User Account';
-  const userInitial = currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : (currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U');
-  const displayEmail = currentUser?.email || 'user@devguard.pro';
+  const displayName = currentUser?.displayName || 'User';
+  const userInitial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
+  const displayEmail = currentUser?.email || '';
+
+  // Shared nav link component
+  const NavItem = ({ item }) => (
+    <NavLink
+      to={item.path}
+      end={item.exact}
+      onClick={onMobileClose}
+      title={isCollapsed ? item.name : ''}
+      className={({ isActive }) =>
+        `relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group ${
+          isActive
+            ? 'bg-cyber-primary/10 text-cyber-primary'
+            : 'text-[#737373] hover:text-[#E5E5E5] hover:bg-white/5'
+        } ${isCollapsed ? 'justify-center' : ''}`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-cyber-primary rounded-full" />
+          )}
+          <span className={isActive ? 'text-cyber-primary' : 'text-[#525252] group-hover:text-[#A3A3A3]'}>
+            {item.icon}
+          </span>
+          {!isCollapsed && <span className="truncate">{item.name}</span>}
+        </>
+      )}
+    </NavLink>
+  );
 
   return (
-    <aside className={`flex-shrink-0 bg-[#0A0A0A] flex flex-col z-10 border-r border-[#262626] transition-all duration-300 ${isCollapsed ? 'w-[80px]' : 'w-[260px]'}`}>
-      {/* User Block like NXUS */}
-      <div className={`p-6 ${isCollapsed ? 'flex justify-center' : ''}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyber-primary flex items-center justify-center text-[#000] font-bold text-lg shrink-0 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
+    <>
+      {/* Mobile sidebar (fixed overlay) */}
+      <aside className={`
+        fixed top-0 left-0 h-full z-50 w-[260px] bg-[#0A0A0A] border-r border-[#1A1A1A]
+        flex flex-col transition-transform duration-300 ease-in-out
+        lg:hidden
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <SidebarContent
+          navItems={navItems}
+          NavItem={NavItem}
+          displayName={displayName}
+          userInitial={userInitial}
+          displayEmail={displayEmail}
+          handleLogout={handleLogout}
+          isCollapsed={false}
+          showClose={true}
+          onClose={onMobileClose}
+        />
+      </aside>
+
+      {/* Desktop sidebar (sticky left panel) */}
+      <aside className={`
+        hidden lg:flex flex-col flex-shrink-0 h-full border-r border-[#1A1A1A]
+        bg-[#0A0A0A] transition-all duration-300 ease-in-out
+        ${isCollapsed ? 'w-[72px]' : 'w-[256px]'}
+      `}>
+        <SidebarContent
+          navItems={navItems}
+          NavItem={NavItem}
+          displayName={displayName}
+          userInitial={userInitial}
+          displayEmail={displayEmail}
+          handleLogout={handleLogout}
+          isCollapsed={isCollapsed}
+          showClose={false}
+        />
+      </aside>
+    </>
+  );
+}
+
+function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEmail, handleLogout, isCollapsed, showClose, onClose }) {
+  return (
+    <>
+      {/* Header */}
+      <div className={`flex items-center gap-3 px-4 py-5 border-b border-[#1A1A1A] ${isCollapsed ? 'justify-center' : ''}`}>
+        {showClose && (
+          <button onClick={onClose} className="mr-auto text-[#737373] hover:text-white transition-colors p-1">
+            <X size={18} />
+          </button>
+        )}
+        {!isCollapsed && !showClose && (
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-cyber-primary/20 border border-cyber-primary/30 flex items-center justify-center">
+              <Shield size={14} className="text-cyber-primary" />
+            </div>
+            <span className="text-white font-bold text-sm tracking-tight">DevGuard</span>
+            <span className="text-cyber-primary font-bold text-sm tracking-tight">Pro</span>
+          </div>
+        )}
+        {isCollapsed && (
+          <div className="w-8 h-8 rounded-xl bg-cyber-primary/20 border border-cyber-primary/30 flex items-center justify-center">
+            <Shield size={15} className="text-cyber-primary" />
+          </div>
+        )}
+      </div>
+
+      {/* User profile */}
+      <div className={`px-3 py-4 border-b border-[#1A1A1A] ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <div className={`flex items-center gap-3 ${isCollapsed ? '' : 'px-1'}`}>
+          <div className="w-9 h-9 rounded-xl bg-cyber-primary flex items-center justify-center text-black font-bold text-sm shrink-0 shadow-[0_0_12px_rgba(74,222,128,0.15)]">
             {userInitial}
           </div>
           {!isCollapsed && (
-            <div className="overflow-hidden animate-in fade-in duration-300">
-              <p className="text-[#F5F5F5] font-semibold text-[13px] truncate">{displayName}</p>
-              <p className="text-[#737373] text-[9px] truncate tracking-wider uppercase">{displayEmail}</p>
+            <div className="min-w-0">
+              <p className="text-white font-semibold text-[13px] truncate">{displayName}</p>
+              <p className="text-[#525252] text-[10px] truncate">{displayEmail}</p>
             </div>
           )}
         </div>
       </div>
 
-      <nav className="flex-1 px-4 flex flex-col gap-6 overflow-y-auto pt-2 overflow-x-hidden">
-        {/* Navigation Section */}
-        <div>
-          {!isCollapsed && (
-            <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3 animate-in fade-in duration-300">
-              Core Protocol
-            </h3>
-          )}
-          <div className="flex flex-col gap-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.path}
-                title={isCollapsed ? item.name : ''}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium rounded-full transition-all duration-300 ${
-                    isActive
-                      ? 'bg-cyber-primary/10 text-cyber-primary'
-                      : 'text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5'
-                  } ${isCollapsed ? 'justify-center px-0' : ''}`
-                }
-              >
-                {item.icon}
-                {!isCollapsed && <span className="animate-in fade-in duration-300">{item.name}</span>}
-              </NavLink>
-            ))}
-          </div>
-        </div>
-
-        {/* Resources Section */}
-        <div>
-          {!isCollapsed && (
-            <h3 className="text-[#737373] text-[10px] font-bold tracking-[0.2em] uppercase px-3 mb-3 animate-in fade-in duration-300">
-              Resources
-            </h3>
-          )}
-          <div className="flex flex-col gap-1">
-            <NavLink
-              to={docsItem.path}
-              title={isCollapsed ? docsItem.name : ''}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium rounded-full transition-all duration-300 ${
-                  isActive
-                    ? 'bg-cyber-primary/10 text-cyber-primary'
-                    : 'text-[#A3A3A3] hover:text-[#F5F5F5] hover:bg-white/5'
-                } ${isCollapsed ? 'justify-center px-0' : ''}`
-              }
-            >
-              {docsItem.icon}
-              {!isCollapsed && <span className="animate-in fade-in duration-300">{docsItem.name}</span>}
-            </NavLink>
-          </div>
-        </div>
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {!isCollapsed && (
+          <p className="text-[#404040] text-[10px] font-semibold uppercase tracking-[0.15em] px-3 mb-3">Navigation</p>
+        )}
+        {navItems.map(item => (
+          <NavItem key={item.path} item={item} />
+        ))}
       </nav>
 
-      {/* Logout Actions */}
-      <div className="p-4 mt-auto">
-        <button 
+      {/* Footer */}
+      <div className={`px-3 py-4 border-t border-[#1A1A1A] ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <button
           onClick={handleLogout}
           title={isCollapsed ? 'Sign Out' : ''}
-          className={`flex items-center gap-2 rounded-full border border-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors text-[13px] font-medium ${isCollapsed ? 'w-10 h-10 justify-center p-0 mx-auto' : 'w-full px-4 py-2.5 justify-center'}`}
+          className={`flex items-center gap-2 text-[#737373] hover:text-cyber-error hover:bg-cyber-error/10 rounded-xl transition-all text-[13px] font-medium ${isCollapsed ? 'w-10 h-10 justify-center' : 'w-full px-3 py-2.5'}`}
         >
           <LogOut size={16} />
-          {!isCollapsed && <span className="animate-in fade-in duration-300">Sign Out</span>}
+          {!isCollapsed && <span>Sign Out</span>}
         </button>
         {!isCollapsed && (
-          <p className="text-center text-[10px] text-[#737373] mt-4 tracking-widest uppercase animate-in fade-in duration-300">
-            DevGuard Pro V1.0
-          </p>
+          <p className="text-[#303030] text-[9px] text-center mt-4 tracking-widest uppercase">DevGuard Pro v1.0</p>
         )}
       </div>
-    </aside>
+    </>
   );
 }

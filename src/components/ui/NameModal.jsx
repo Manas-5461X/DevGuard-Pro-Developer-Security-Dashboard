@@ -1,50 +1,85 @@
 import React, { useState } from 'react';
-import { updateProfile } from 'firebase/auth';
 import { useAuth } from '../../hooks/useAuth';
+import { User, ArrowRight } from 'lucide-react';
 
 export default function NameModal() {
-  const { currentUser } = useAuth();
+  const { currentUser, updateUserDisplayName } = useAuth();
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  // Hide entirely if no user or they already have a name initialized
+  // Show modal if:
+  // 1. We have a logged-in user
+  // 2. They don't have a displayName set yet (never been asked)
   if (!currentUser || currentUser.displayName) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (name.trim().length < 2) {
+      setError('Name must be at least 2 characters.');
+      return;
+    }
     setIsSubmitting(true);
+    setError('');
     try {
-      await updateProfile(currentUser, { displayName: name.trim() });
-      // Force a reload to reflect the display name globally in Auth context
-      window.location.reload();
+      await updateUserDisplayName(name.trim());
+      // State update in AuthContext will cause re-render and modal will hide naturally
     } catch (err) {
       console.error('Failed to set name', err);
+      setError('Could not save your name. Please try again.');
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#000]/80 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="cyber-panel p-8 max-w-sm w-full animate-in fade-in zoom-in duration-300">
-        <h2 className="text-xl font-bold text-white mb-2 uppercase tracking-widest text-[#F5F5F5]">Identify Yourself</h2>
-        <p className="text-[#A3A3A3] text-sm mb-6">Please enter your name to personalize your dashboard profile.</p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md">
+      <div className="bg-[#0A0A0A] border border-[#262626] rounded-2xl p-8 max-w-sm w-full shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-300">
+        {/* Icon */}
+        <div className="w-14 h-14 rounded-2xl bg-cyber-primary/10 border border-cyber-primary/30 flex items-center justify-center mx-auto mb-6">
+          <User size={24} className="text-cyber-primary" />
+        </div>
+
+        <h2 className="text-xl font-bold text-white text-center mb-2 tracking-tight">
+          What should we call you?
+        </h2>
+        <p className="text-[#737373] text-sm text-center mb-8 leading-relaxed">
+          This name will appear on your dashboard and personalize your security reports.
+        </p>
+
+        {error && (
+          <p className="text-cyber-error text-xs text-center mb-4 bg-cyber-error/10 border border-cyber-error/20 rounded-lg py-2 px-3">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             type="text"
-            placeholder="Your Name"
+            placeholder="e.g. Alex Johnson"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="bg-[#0A0A0A] border border-[#262626] text-white px-4 py-3 rounded-xl focus:outline-none focus:border-cyber-primary transition-colors"
+            className="w-full bg-[#121212] border border-[#262626] text-white placeholder-[#525252] px-4 py-3 rounded-xl focus:outline-none focus:border-cyber-primary transition-colors text-sm"
             required
             autoFocus
+            maxLength={50}
           />
           <button
             type="submit"
-            disabled={isSubmitting || !name.trim()}
-            className="w-full bg-cyber-primary text-[#000] font-bold uppercase tracking-widest py-3 rounded-xl hover:bg-cyber-primary-hover transition-colors disabled:opacity-50"
+            disabled={isSubmitting || !name.trim() || name.trim().length < 2}
+            className="w-full flex items-center justify-center gap-2 bg-cyber-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl hover:bg-cyber-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
-            {isSubmitting ? 'Saving...' : 'Save Name'}
+            {isSubmitting ? (
+              <>
+                <span className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Continue to Dashboard
+                <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
       </div>

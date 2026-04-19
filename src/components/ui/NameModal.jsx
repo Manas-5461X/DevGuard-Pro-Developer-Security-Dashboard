@@ -34,16 +34,16 @@ export default function NameModal() {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md">
-      <div className="bg-[#0A0A0A] border border-[#262626] rounded-2xl p-8 max-w-sm w-full shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-300">
+      <div className="bg-cyber-bg border border-cyber-border rounded-2xl p-8 max-w-sm w-full shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-300">
         {/* Icon */}
         <div className="w-14 h-14 rounded-2xl bg-cyber-primary/10 border border-cyber-primary/30 flex items-center justify-center mx-auto mb-6">
           <User size={24} className="text-cyber-primary" />
         </div>
 
-        <h2 className="text-xl font-bold text-white text-center mb-2 tracking-tight">
+        <h2 className="text-xl font-bold text-cyber-text text-center mb-2 tracking-tight">
           What should we call you?
         </h2>
-        <p className="text-[#737373] text-sm text-center mb-8 leading-relaxed">
+        <p className="text-cyber-dark-text text-sm text-center mb-8 leading-relaxed">
           This name will appear on your dashboard and personalize your security reports.
         </p>
 
@@ -59,7 +59,7 @@ export default function NameModal() {
             placeholder="e.g. Alex Johnson"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-[#121212] border border-[#262626] text-white placeholder-[#525252] px-4 py-3 rounded-xl focus:outline-none focus:border-cyber-primary transition-colors text-sm"
+            className="w-full bg-cyber-surface border border-cyber-border text-cyber-text placeholder-cyber-dark-text px-4 py-3 rounded-xl focus:outline-none focus:border-cyber-primary transition-colors text-sm"
             required
             autoFocus
             maxLength={50}

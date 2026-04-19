@@ -13,7 +13,7 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, title, messag
       />
       
       {/* Modal Content */}
-      <div className="relative bg-[#0D0D0D] border border-[#262626] rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 shadow-2xl">
+      <div className="relative bg-cyber-surface border border-cyber-border rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 shadow-2xl">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className={`p-2 rounded-lg ${type === 'danger' ? 'bg-cyber-error/10 text-cyber-error' : 'bg-cyber-primary/10 text-cyber-primary'}`}>
@@ -21,21 +21,21 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, title, messag
             </div>
             <button 
               onClick={onClose}
-              className="text-[#525252] hover:text-white transition-colors"
+              className="text-cyber-dark-text hover:text-cyber-text transition-colors"
             >
               <X size={20} />
             </button>
           </div>
           
-          <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-          <p className="text-[#A3A3A3] text-sm leading-relaxed mb-8">
+          <h3 className="text-xl font-bold text-cyber-text mb-2">{title}</h3>
+          <p className="text-cyber-dark-text text-sm leading-relaxed mb-8">
             {message}
           </p>
           
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 px-4 border border-[#262626] text-[#737373] hover:text-white hover:border-[#404040] rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
+              className="flex-1 py-3 px-4 border border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/30 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
             >
               Cancel
             </button>

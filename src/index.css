@@ -16,15 +16,15 @@
 }
 
 .light {
-  --color-cyber-bg: #F5F5F5;
+  --color-cyber-bg: #FAFAFA;
   --color-cyber-surface: #FFFFFF;
-  --color-cyber-surface-hover: #F0F0F0;
+  --color-cyber-surface-hover: #F4F4F5;
   --color-cyber-primary: #16A34A;
   --color-cyber-primary-hover: #15803D;
-  --color-cyber-border: #E5E5E5;
-  --color-cyber-text: #171717;
-  --color-cyber-dark-text: #525252;
-  --color-card-bg: #FAFAFA;
+  --color-cyber-border: #D1D5DB;
+  --color-cyber-text: #09090B;
+  --color-cyber-dark-text: #52525B;
+  --color-card-bg: #FFFFFF;
 }
 
 @theme {
@@ -56,12 +56,13 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: var(--color-cyber-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262626;
+  background: var(--color-cyber-border);
   border-radius: 9999px;
+  border: 2px solid var(--color-cyber-bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -69,8 +70,11 @@
 }
 
 .glow-text {
-  /* Subdued glow for a more premium look */
-  text-shadow: 0 0 15px rgba(74, 222, 128, 0.2);
+  text-shadow: 0 0 15px rgba(74, 222, 128, 0.15);
+}
+
+.light .glow-text {
+  text-shadow: none;
 }
 
 .cyber-panel {

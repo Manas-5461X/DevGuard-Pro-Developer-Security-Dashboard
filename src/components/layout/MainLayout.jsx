@@ -41,7 +41,7 @@ export default function MainLayout() {
       {/* Desktop Sidebar Toggle (floating pill) */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 z-30 w-5 h-10 bg-[#1A1A1A] border border-[#303030] rounded-full items-center justify-center text-[#737373] hover:text-cyber-primary hover:border-cyber-primary/50 transition-all duration-300 ${isCollapsed ? 'left-[68px]' : 'left-[248px]'}`}
+        className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 z-30 w-5 h-10 bg-cyber-surface border border-cyber-border rounded-full items-center justify-center text-cyber-dark-text hover:text-cyber-primary hover:border-cyber-primary/50 transition-all duration-300 ${isCollapsed ? 'left-[68px]' : 'left-[248px]'}`}
         title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
       >
         <svg width="8" height="12" viewBox="0 0 8 12" fill="none">
@@ -58,11 +58,11 @@ export default function MainLayout() {
         <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-cyber-bg/95 backdrop-blur-sm border-b border-cyber-border">
           <button
             onClick={() => setIsMobileOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl border border-cyber-border text-[#A3A3A3] hover:text-white hover:bg-white/5 transition-all"
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-cyber-border text-cyber-dark-text hover:bg-cyber-surface-hover transition-all"
           >
             <Menu size={18} />
           </button>
-          <span className="text-white font-bold tracking-tight text-sm">DevGuard Pro</span>
+          <span className="text-cyber-text font-bold tracking-tight text-sm">DevGuard Pro</span>
         </div>
 
         <div className="p-4 md:p-8">

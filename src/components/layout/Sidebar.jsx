@@ -40,7 +40,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
         `relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group ${
           isActive
             ? 'bg-cyber-primary/10 text-cyber-primary'
-            : 'text-[#737373] hover:text-[#E5E5E5] hover:bg-white/5'
+            : 'text-cyber-dark-text hover:text-cyber-text hover:bg-cyber-surface-hover'
         } ${isCollapsed ? 'justify-center' : ''}`
       }
     >
@@ -49,7 +49,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }) {
           {isActive && (
             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-cyber-primary rounded-full" />
           )}
-          <span className={isActive ? 'text-cyber-primary' : 'text-[#525252] group-hover:text-[#A3A3A3]'}>
+          <span className={isActive ? 'text-cyber-primary' : 'text-cyber-dark-text group-hover:text-cyber-text'}>
             {item.icon}
           </span>
           {!isCollapsed && <span className="truncate">{item.name}</span>}
@@ -111,7 +111,7 @@ function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEm
       {/* Header */}
       <div className={`flex items-center gap-3 px-4 py-5 border-b border-cyber-border ${isCollapsed ? 'justify-center' : ''}`}>
         {showClose && (
-          <button onClick={onClose} className="mr-auto text-[#737373] hover:text-white transition-colors p-1">
+          <button onClick={onClose} className="mr-auto text-cyber-dark-text hover:text-cyber-text transition-colors p-1">
             <X size={18} />
           </button>
         )}
@@ -120,7 +120,7 @@ function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEm
             <div className="w-7 h-7 rounded-lg bg-cyber-primary/20 border border-cyber-primary/30 flex items-center justify-center">
               <Shield size={14} className="text-cyber-primary" />
             </div>
-            <span className="text-white font-bold text-sm tracking-tight">DevGuard</span>
+            <span className="text-cyber-text font-bold text-sm tracking-tight">DevGuard</span>
             <span className="text-cyber-primary font-bold text-sm tracking-tight">Pro</span>
           </div>
         )}
@@ -139,8 +139,8 @@ function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEm
           </div>
           {!isCollapsed && (
             <div className="min-w-0">
-              <p className="text-white font-semibold text-[13px] truncate">{displayName}</p>
-              <p className="text-[#525252] text-[10px] truncate">{displayEmail}</p>
+              <p className="text-cyber-text font-semibold text-[13px] truncate">{displayName}</p>
+              <p className="text-cyber-dark-text text-[10px] truncate">{displayEmail}</p>
             </div>
           )}
         </div>
@@ -149,7 +149,7 @@ function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEm
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {!isCollapsed && (
-          <p className="text-[#404040] text-[10px] font-semibold uppercase tracking-[0.15em] px-3 mb-3">Navigation</p>
+          <p className="text-cyber-dark-text/30 text-[10px] font-semibold uppercase tracking-[0.15em] px-3 mb-3">Navigation</p>
         )}
         {navItems.map(item => (
           <NavItem key={item.path} item={item} />
@@ -175,7 +175,7 @@ function SidebarContent({ navItems, NavItem, displayName, userInitial, displayEm
           {!isCollapsed && <span>Sign Out</span>}
         </button>
         {!isCollapsed && (
-          <p className="text-[#303030] text-[9px] text-center mt-4 tracking-widest uppercase">DevGuard Pro v1.0</p>
+          <p className="text-cyber-dark-text/40 text-[9px] text-center mt-4 tracking-widest uppercase">DevGuard Pro v1.0</p>
         )}
       </div>
     </>

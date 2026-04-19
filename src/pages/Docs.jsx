@@ -17,17 +17,17 @@ function CodeBlock({ children, className }) {
   };
 
   return (
-    <div className="relative group my-5 rounded-xl overflow-hidden border border-[#262626]">
-      <div className="flex items-center justify-between px-4 py-2 bg-[#0A0A0A] border-b border-[#262626]">
+    <div className="relative group my-5 rounded-xl overflow-hidden border border-cyber-border">
+      <div className="flex items-center justify-between px-4 py-2 bg-cyber-bg border-b border-cyber-border">
         <span className="text-[10px] font-mono text-cyber-primary/70 uppercase tracking-widest">{lang}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-[#525252] hover:text-cyber-primary transition-colors text-[11px]"
+          className="flex items-center gap-1.5 text-cyber-dark-text hover:text-cyber-primary transition-colors text-[11px]"
         >
           {copied ? <><Check size={12} className="text-cyber-primary" /> Copied!</> : <><Copy size={12} /> Copy</>}
         </button>
       </div>
-      <pre className="bg-[#0D0D0D] p-4 overflow-x-auto text-[13px] leading-relaxed text-[#D4D4D4] font-mono">
+      <pre className="bg-cyber-surface p-4 overflow-x-auto text-[13px] leading-relaxed text-cyber-text font-mono">
         <code>{code}</code>
       </pre>
     </div>
@@ -39,42 +39,42 @@ const mdComponents = {
   code({ node, inline, className, children, ...props }) {
     if (inline) {
       return (
-        <code className="bg-[#0A0A0A] border border-[#262626] text-cyber-primary text-[12px] px-1.5 py-0.5 rounded font-mono" {...props}>
+        <code className="bg-cyber-bg border border-cyber-border text-cyber-primary text-[12px] px-1.5 py-0.5 rounded font-mono" {...props}>
           {children}
         </code>
       );
     }
     return <CodeBlock className={className}>{children}</CodeBlock>;
   },
-  h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-4 mt-8 first:mt-0">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-xl font-bold text-white mb-3 mt-8 flex items-center gap-2 border-b border-[#1A1A1A] pb-2">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-base font-bold text-white mb-2 mt-5 text-[#E5E5E5]">{children}</h3>,
+  h1: ({ children }) => <h1 className="text-2xl font-bold text-cyber-text mb-4 mt-8 first:mt-0">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-xl font-bold text-cyber-text mb-3 mt-8 flex items-center gap-2 border-b border-cyber-border pb-2">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-base font-bold text-cyber-text mb-2 mt-5">{children}</h3>,
   h4: ({ children }) => <h4 className="text-sm font-bold text-cyber-primary/90 mb-2 mt-4 uppercase tracking-wider">{children}</h4>,
-  p: ({ children }) => <p className="text-[#A3A3A3] text-[14px] leading-[1.85] mb-3">{children}</p>,
+  p: ({ children }) => <p className="text-cyber-dark-text text-[14px] leading-[1.85] mb-3">{children}</p>,
   ul: ({ children }) => <ul className="space-y-1.5 mb-4 ml-1">{children}</ul>,
   ol: ({ children }) => <ol className="space-y-1.5 mb-4 ml-1 list-decimal list-inside">{children}</ol>,
   li: ({ children }) => (
-    <li className="flex items-start gap-2.5 text-[#A3A3A3] text-[14px] leading-relaxed">
+    <li className="flex items-start gap-2.5 text-cyber-dark-text text-[14px] leading-relaxed">
       <span className="w-1.5 h-1.5 rounded-full bg-cyber-primary/60 shrink-0 mt-2" />
       <span className="list-none">{children}</span>
     </li>
   ),
   blockquote: ({ children }) => (
     <blockquote className="border-l-4 border-cyber-primary/40 pl-5 py-2 my-6 bg-cyber-primary/5 rounded-r-xl border-dashed">
-      <div className="text-[#D4D4D4] text-[15px] italic leading-relaxed">{children}</div>
+      <div className="text-cyber-text text-[15px] italic leading-relaxed opacity-90">{children}</div>
     </blockquote>
   ),
-  strong: ({ children }) => <strong className="text-white font-bold bg-white/5 px-1 rounded">{children}</strong>,
+  strong: ({ children }) => <strong className="text-cyber-text font-bold bg-cyber-primary/5 px-1 rounded">{children}</strong>,
   em: ({ children }) => <em className="text-cyber-primary/95 not-italic font-medium border-b border-cyber-primary/30">{children}</em>,
-  hr: () => <hr className="border-[#1A1A1A] my-8" />,
+  hr: () => <hr className="border-cyber-border my-8" />,
   a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyber-primary hover:underline">{children}</a>,
   table: ({ children }) => (
     <div className="overflow-x-auto my-4">
       <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   ),
-  th: ({ children }) => <th className="text-left px-4 py-2 border border-[#262626] bg-[#121212] text-white font-semibold text-xs uppercase tracking-wider">{children}</th>,
-  td: ({ children }) => <td className="px-4 py-2 border border-[#1A1A1A] text-[#A3A3A3] text-[13px]">{children}</td>,
+  th: ({ children }) => <th className="text-left px-4 py-2 border border-cyber-border bg-cyber-bg text-cyber-text font-semibold text-xs uppercase tracking-wider">{children}</th>,
+  td: ({ children }) => <td className="px-4 py-2 border border-cyber-border text-cyber-dark-text text-[13px]">{children}</td>,
 };
 
 export default function Docs() {
@@ -139,13 +139,13 @@ export default function Docs() {
       )}
 
       {/* Mobile TOC panel */}
-      <aside className={`fixed top-0 left-0 h-full z-50 w-72 bg-[#0A0A0A] border-r border-[#1A1A1A] flex flex-col transition-transform duration-300 lg:hidden ${mobileTocOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1A1A1A]">
+      <aside className={`fixed top-0 left-0 h-full z-50 w-72 bg-cyber-bg border-r border-cyber-border flex flex-col transition-transform duration-300 lg:hidden ${mobileTocOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-cyber-border">
           <div className="flex items-center gap-2">
             <BookOpen size={15} className="text-cyber-primary" />
-            <span className="text-white font-semibold text-sm">Chapters</span>
+            <span className="text-cyber-text font-semibold text-sm">Chapters</span>
           </div>
-          <button onClick={() => setMobileTocOpen(false)} className="text-[#737373] hover:text-white"><X size={18} /></button>
+          <button onClick={() => setMobileTocOpen(false)} className="text-cyber-dark-text hover:text-cyber-text"><X size={18} /></button>
         </div>
         <nav className="flex-1 overflow-y-auto py-3 px-3">
           <TOCList items={docsContent} active={activeSection} onSelect={scrollToSection} />
@@ -157,16 +157,16 @@ export default function Docs() {
 
         {/* Desktop sticky sidebar */}
         <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-4 max-h-[calc(100vh-6rem)] flex flex-col bg-[#0A0A0A] border border-[#1A1A1A] rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1A1A1A] flex items-center gap-2 shrink-0">
+          <div className="sticky top-4 max-h-[calc(100vh-6rem)] flex flex-col bg-cyber-bg border border-cyber-border rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-cyber-border flex items-center gap-2 shrink-0">
               <BookOpen size={14} className="text-cyber-primary" />
-              <span className="text-white text-xs font-semibold uppercase tracking-widest">Documentation</span>
+              <span className="text-cyber-text text-xs font-semibold uppercase tracking-widest leading-none">Documentation</span>
             </div>
             <nav className="flex-1 overflow-y-auto py-2 px-2">
               <TOCList items={docsContent} active={activeSection} onSelect={scrollToSection} />
             </nav>
-            <div className="px-4 py-3 border-t border-[#1A1A1A] shrink-0">
-              <p className="text-[#404040] text-[10px] tracking-widest uppercase">{docsContent.length} Chapters</p>
+            <div className="px-4 py-3 border-t border-cyber-border shrink-0">
+              <p className="text-cyber-dark-text/40 text-[10px] tracking-widest uppercase">{docsContent.length} Chapters</p>
             </div>
           </div>
         </aside>
@@ -174,25 +174,25 @@ export default function Docs() {
         {/* Main content area */}
         <div className="flex-1 min-w-0">
           {/* Mobile header bar */}
-          <div className="lg:hidden flex items-center gap-3 mb-6 p-3 bg-[#121212] border border-[#1A1A1A] rounded-xl">
-            <button onClick={() => setMobileTocOpen(true)} className="flex items-center gap-2 text-[#A3A3A3] hover:text-white text-sm font-medium">
+          <div className="lg:hidden flex items-center gap-3 mb-6 p-3 bg-cyber-surface border border-cyber-border rounded-xl">
+            <button onClick={() => setMobileTocOpen(true)} className="flex items-center gap-2 text-cyber-dark-text hover:text-cyber-text text-sm font-medium">
               <Menu size={16} /> Chapters
             </button>
-            <span className="text-[#262626]">·</span>
+            <span className="text-cyber-border">·</span>
             <span className="text-cyber-primary text-xs font-medium truncate">{docsContent.find(s => s.id === activeSection)?.title}</span>
           </div>
 
           {/* Page hero */}
-          <div className="mb-14 pb-10 border-b border-[#1A1A1A]">
+          <div className="mb-14 pb-10 border-b border-cyber-border">
             <span className="text-cyber-primary text-[10px] font-bold tracking-[0.3em] uppercase mb-3 block">Security Intelligence · 2026</span>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-5 tracking-tight">Security<br />Documentation</h1>
-            <p className="text-[#737373] text-base leading-relaxed max-w-xl">
+            <h1 className="text-4xl md:text-5xl font-bold text-cyber-text mb-5 tracking-tight leading-tight">Security Documentation</h1>
+            <p className="text-cyber-dark-text text-base leading-relaxed max-w-xl">
               Comprehensive production-grade security encyclopedia — OWASP Top 10 to Zero Trust, 
               with real code examples and actionable prevention guides.
             </p>
             <div className="flex flex-wrap gap-2 mt-6">
               {['8 Chapters', '30+ Sections', 'OWASP Aligned', 'Code Examples'].map(t => (
-                <span key={t} className="text-[11px] text-[#737373] bg-[#121212] border border-[#1A1A1A] px-3 py-1.5 rounded-full">{t}</span>
+                <span key={t} className="text-[11px] text-cyber-dark-text bg-cyber-surface border border-cyber-border px-3 py-1.5 rounded-full">{t}</span>
               ))}
             </div>
           </div>
@@ -208,21 +208,21 @@ export default function Docs() {
               >
                 {/* Chapter header */}
                 <div className="flex items-start gap-4 mb-10">
-                  <div className="w-10 h-10 rounded-xl bg-cyber-primary/10 border border-cyber-primary/20 flex items-center justify-center text-cyber-primary shrink-0 mt-0.5">{chapter.icon}</div>
+                  <div className="w-10 h-10 rounded-xl bg-cyber-primary/10 border border-cyber-primary/20 flex items-center justify-center text-cyber-primary shrink-0 mt-0.5 shadow-sm">{chapter.icon}</div>
                   <div>
-                    <span className="text-[#404040] text-[10px] font-bold tracking-[0.2em] uppercase block mb-1">Chapter {String(idx + 1).padStart(2, '0')}</span>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{chapter.title}</h2>
-                    <p className="text-[#737373] text-sm mt-1.5 leading-relaxed max-w-xl">{chapter.description}</p>
+                    <span className="text-cyber-dark-text/40 text-[10px] font-bold tracking-[0.2em] uppercase block mb-1">Chapter {String(idx + 1).padStart(2, '0')}</span>
+                    <h2 className="text-2xl md:text-3xl font-bold text-cyber-text tracking-tight leading-tight">{chapter.title}</h2>
+                    <p className="text-cyber-dark-text text-sm mt-1.5 leading-relaxed max-w-xl opacity-80">{chapter.description}</p>
                   </div>
                 </div>
 
                 {/* Sections */}
                 <div className="space-y-10 pl-0 md:pl-14">
                   {chapter.sections.map((sec, si) => (
-                    <div key={si} className="border-l-2 border-[#1A1A1A] pl-6 hover:border-cyber-primary/30 transition-colors">
+                    <div key={si} className="border-l-2 border-cyber-border pl-6 hover:border-cyber-primary/40 transition-colors">
                       <div className="flex items-center gap-2 mb-4">
                         <ChevronRight size={15} className="text-cyber-primary shrink-0" />
-                        <h3 className="text-white font-bold text-lg tracking-tight">{sec.subtitle}</h3>
+                        <h3 className="text-cyber-text font-bold text-lg tracking-tight">{sec.subtitle}</h3>
                       </div>
                       <div className="docs-content">
                         <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
@@ -235,9 +235,9 @@ export default function Docs() {
 
                 {idx < docsContent.length - 1 && (
                   <div className="flex items-center gap-4 mt-16">
-                    <div className="flex-1 h-px bg-[#1A1A1A]" />
-                    <span className="text-[#303030] text-[10px] tracking-widest uppercase shrink-0">End of Ch.{idx + 1}</span>
-                    <div className="flex-1 h-px bg-[#1A1A1A]" />
+                    <div className="flex-1 h-px bg-cyber-border opacity-50" />
+                    <span className="text-cyber-dark-text/20 text-[10px] tracking-widest uppercase shrink-0">End of Ch.{idx + 1}</span>
+                    <div className="flex-1 h-px bg-cyber-border opacity-50" />
                   </div>
                 )}
               </section>
@@ -269,10 +269,10 @@ function TOCList({ items, active, onSelect }) {
             className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] font-medium transition-all ${
               active === s.id
                 ? 'bg-cyber-primary/10 text-cyber-primary'
-                : 'text-[#737373] hover:text-[#E5E5E5] hover:bg-white/5'
+                : 'text-cyber-dark-text hover:text-cyber-text hover:bg-cyber-surface-hover'
             }`}
           >
-            <span className={`shrink-0 ${active === s.id ? 'text-cyber-primary' : 'text-[#525252]'}`}>{s.icon}</span>
+            <span className={`shrink-0 ${active === s.id ? 'text-cyber-primary' : 'text-cyber-dark-text'}`}>{s.icon}</span>
             <span className="truncate">{s.title}</span>
             {active === s.id && <span className="ml-auto w-1.5 h-1.5 bg-cyber-primary rounded-full shrink-0" />}
           </button>

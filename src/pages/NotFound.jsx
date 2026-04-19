@@ -4,7 +4,7 @@ import { Shield, Home, ArrowLeft } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-cyber-bg flex flex-col items-center justify-center px-4 relative overflow-hidden">
       {/* Background grid effect */}
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: 'linear-gradient(#4ADE80 1px, transparent 1px), linear-gradient(90deg, #4ADE80 1px, transparent 1px)',
@@ -25,10 +25,10 @@ export default function NotFound() {
           404
         </div>
 
-        <h1 className="text-2xl font-bold text-white mb-3 tracking-tight">
+        <h1 className="text-2xl font-bold text-cyber-text mb-3 tracking-tight">
           Sector Not Found
         </h1>
-        <p className="text-[#737373] text-sm leading-relaxed mb-10">
+        <p className="text-cyber-dark-text text-sm leading-relaxed mb-10">
           The security node you're looking for doesn't exist or has been classified. 
           Please verify the access path and try again.
         </p>
@@ -49,7 +49,7 @@ export default function NotFound() {
           </Link>
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-2 border border-[#262626] text-[#A3A3A3] hover:text-white hover:border-[#404040] font-medium px-6 py-3 rounded-xl transition-all text-sm"
+            className="flex items-center gap-2 border border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/30 font-medium px-6 py-3 rounded-xl transition-all text-sm"
           >
             <ArrowLeft size={16} />
             Go Back

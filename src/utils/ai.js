@@ -44,7 +44,13 @@ Return ONLY the raw fixed code.`;
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error?.message || 'Failed to communicate with Gemini API');
+      let errorMessage = err.error?.message || 'Failed to communicate with Gemini API';
+      
+      if (errorMessage.toLowerCase().includes('quota')) {
+        errorMessage = 'Quota Exceeded: You have hit the rate limit for the free Gemini tier (15 requests per minute). Please wait 60 seconds and try again.';
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

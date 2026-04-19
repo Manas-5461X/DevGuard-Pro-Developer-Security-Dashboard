@@ -328,18 +328,18 @@ export default function Scanner() {
             <button
                onClick={handleBookmarkToggle}
                disabled={!currentScanId}
-               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border transition-colors uppercase tracking-widest font-bold text-sm disabled:opacity-50 ${isBookmarked ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary shadow-[0_0_10px_rgba(0,255,102,0.2)]' : 'border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/50'}`}
+               className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 border transition-colors uppercase tracking-wide font-bold text-xs disabled:opacity-50 ${isBookmarked ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary shadow-[0_0_10px_rgba(0,255,102,0.2)]' : 'border-cyber-border text-cyber-dark-text hover:text-cyber-text hover:border-cyber-primary/50'}`}
             >
-              {isBookmarked ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+              {isBookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
               {isBookmarked ? 'Bookmarked' : 'Bookmark Scan'}
             </button>
             <button
                onClick={handleGeminiAnalyze}
                disabled={isAnalyzing || aiSuggestedCode !== null}
-               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-widest font-bold text-sm disabled:opacity-50"
+               className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-cyber-primary text-[#000] hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(0,255,102,0.3)] transition-colors uppercase tracking-wide font-bold text-xs disabled:opacity-50"
             >
-               <Bot size={18} />
-               {isAnalyzing ? 'Analyzing Code...' : 'Analyze with Gemini'}
+               <Bot size={16} />
+               {isAnalyzing ? 'Analyzing...' : 'Analyze with Gemini'}
             </button>
           </div>
         )}

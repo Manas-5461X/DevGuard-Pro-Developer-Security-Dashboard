@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const minimumUXDelay = setTimeout(() => {
       setMinDelayComplete(true);
-    }, 600);
+    }, 300);
 
     const unsubscribe = onAuthStateChanged(auth, user => {
       setCurrentUser(user);

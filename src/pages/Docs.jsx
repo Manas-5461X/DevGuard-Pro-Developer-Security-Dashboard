@@ -43,14 +43,17 @@ export default function Docs() {
   const scrollToSection = useCallback((id) => {
     const el = sectionRefs.current[id];
     const container = contentRef.current;
-    if (el && container) {
-      const containerTop = container.getBoundingClientRect().top;
-      const elTop = el.getBoundingClientRect().top;
-      const scrollOffset = container.scrollTop + (elTop - containerTop) - 100;
-      container.scrollTo({ top: scrollOffset, behavior: 'smooth' });
-      setActiveSection(id);
-      setMobileTocOpen(false);
+    if (!el || !container) return;
+    // Walk up the DOM to get the true offset relative to the scroll container
+    let offset = 0;
+    let node = el;
+    while (node && node !== container) {
+      offset += node.offsetTop;
+      node = node.offsetParent;
     }
+    container.scrollTo({ top: offset - 120, behavior: 'smooth' });
+    setActiveSection(id);
+    setMobileTocOpen(false);
   }, []);
 
   const scrollToTop = useCallback(() => {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '../services/firebase';
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useAuth } from './useAuth';
 
 // GLOBAL CACHE: Scoped per-user by uid to prevent data leakage between accounts
@@ -32,30 +32,22 @@ export function useScans() {
     }
 
     try {
+      // NOTE: No orderBy here — avoids composite index requirement which causes slow cold starts.
+      // Client-side sort is instant and Firebase returns results within one round-trip.
       const q = query(
         collection(db, 'scans'),
-        where('userId', '==', uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', uid)
       );
       const querySnapshot = await getDocs(q);
       const scansData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort newest first client-side
+      scansData.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 
       userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
       setScans(scansData);
     } catch (err) {
       console.error('Error fetching scans:', err);
-      if (err.message?.includes('index') || err.code === 'failed-precondition') {
-        try {
-          const qFallback = query(collection(db, 'scans'), where('userId', '==', uid));
-          const snap = await getDocs(qFallback);
-          const scansData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          scansData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-          userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
-          setScans(scansData);
-        } catch (fallbackErr) {
-          console.error('Fallback fetch also failed:', fallbackErr);
-        }
-      }
+      // Even on error, clear loading state so UI doesn't hang
     } finally {
       setLoading(false);
     }

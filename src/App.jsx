@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
 import History from './pages/History';
+import Docs from './pages/Docs';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -24,6 +25,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/scanner" element={<Scanner />} />
               <Route path="/history" element={<History />} />
+              <Route path="/docs" element={<Docs />} />
             </Route>
           </Route>
         </Routes>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Shield, LayoutDashboard, History, LogOut } from 'lucide-react';
+import { Shield, LayoutDashboard, History, LogOut, BookOpen } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function Sidebar() {
@@ -11,6 +11,7 @@ export default function Sidebar() {
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
     { name: 'Scanner', path: '/scanner', icon: <Shield size={20} /> },
     { name: 'History', path: '/history', icon: <History size={20} /> },
+    { name: 'Docs', path: '/docs', icon: <BookOpen size={20} /> },
   ];
 
   async function handleLogout() {

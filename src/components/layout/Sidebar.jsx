@@ -24,7 +24,8 @@ export default function Sidebar() {
     }
   }
 
-  const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U';
+  const displayName = currentUser?.displayName || 'User Account';
+  const userInitial = currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : (currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U');
   const displayEmail = currentUser?.email || 'user@devguard.pro';
 
   return (
@@ -36,8 +37,8 @@ export default function Sidebar() {
             {userInitial}
           </div>
           <div className="overflow-hidden">
-            <p className="text-[#F5F5F5] font-semibold text-sm truncate">User Account</p>
-            <p className="text-[#737373] text-[10px] truncate">{displayEmail}</p>
+            <p className="text-[#F5F5F5] font-semibold text-[13px] truncate">{displayName}</p>
+            <p className="text-[#737373] text-[9px] truncate tracking-wider">{displayEmail}</p>
           </div>
         </div>
       </div>

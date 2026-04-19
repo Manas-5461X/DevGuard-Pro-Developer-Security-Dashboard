@@ -217,7 +217,7 @@ function Comment({ userInput }) {
 
               <ul className="list-disc pl-6 space-y-2 mt-4 text-[#F5F5F5]">
                 <li>Always include <code className="bg-[#121212] px-2 rounded">.env</code> in your <code className="bg-[#121212] px-2 rounded">.gitignore</code> file.</li>
-                <li>Utilize bcrypt (with cost > 10) or Argon2 for hashing static passwords; never hash with MD5 or SHA1.</li>
+                <li>Utilize bcrypt (with cost &gt; 10) or Argon2 for hashing static passwords; never hash with MD5 or SHA1.</li>
                 <li>Rotate asymmetric access keys strictly on 90-day lifecycles.</li>
               </ul>
             </div>

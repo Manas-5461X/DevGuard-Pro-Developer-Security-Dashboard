@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import NameModal from '../ui/NameModal';
 
 export default function MainLayout() {
   return (
@@ -9,6 +10,7 @@ export default function MainLayout() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 w-full">
         <Outlet />
       </main>
+      <NameModal />
     </div>
   );
 }

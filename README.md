@@ -138,12 +138,12 @@ To ensure a smooth developer experience, DevGuard Pro uses a **Local-First Data 
 
 ```mermaid
 graph TD
-    A[User Action: Scan/Bookmark] --> B[React State Update]
-    B --> C[localStorage Write - Instant]
-    C --> D{Is User Logged In?}
-    D -- Yes --> E[Firebase Firestore Sync - Background]
-    D -- No --> F[Data Stays Local Only]
-    E --> G[Sync Complete Badge]
+    A["User Action: Scan/Bookmark"] --> B["React State Update"]
+    B --> C["localStorage Write - Instant"]
+    C --> D{"Is User Logged In?"}
+    D -- "Yes" --> E["Firebase Firestore Sync - Background"]
+    D -- "No" --> F["Data Stays Local Only"]
+    E --> G["Sync Complete Badge"]
 ```
 
 This model ensures that the dashboard is **always populated instantly**, even if the network is flaky or the Firebase quota is exceeded.

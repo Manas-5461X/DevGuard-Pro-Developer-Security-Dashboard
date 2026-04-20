@@ -1,6 +1,6 @@
 <div align="center">
 
-![DevGuard Pro Asset](file:///d:/ALL/Study/Personal%20Projects/DevGuard-Pro-Developer-Security-Dashboard/devguard_pro_logo_1776675644406.png)
+![DevGuard Pro Asset](./devguard_pro_logo.png)
 
 ```text
   _____              _____                       _   _____           

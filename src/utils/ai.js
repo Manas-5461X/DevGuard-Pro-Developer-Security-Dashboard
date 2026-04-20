@@ -21,7 +21,10 @@ CRITICALLY IMPORTANT INSTRUCTIONS:
 The user has requested that responseMimeType is application/json.
 - JSON must have two keys: "analysis" and "fixedCode".
 - "analysis": A 2-3 sentence technical summary of vulnerabilities ${hasLocalFindings ? 'provided' : 'you discovered'} and the fix strategy.
-- "fixedCode": The complete source code with all fixes applied. If no issues are found even after your deep audit, return the original code and state "No issues found" in the analysis.
+- If no vulnerabilities are found after your deep audit, or the provided code is already perfectly secure, return:
+  - "analysis": "Zero vulnerabilities detected after deep AI audit. The codebase follows security best practices."
+  - "fixedCode": (The exact original source code provided).
+- JSON format only. No other text.
 
 schema:
 {

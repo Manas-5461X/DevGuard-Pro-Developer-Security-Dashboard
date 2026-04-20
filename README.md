@@ -1,6 +1,6 @@
 <div align="center">
 
-![DevGuard Pro Asset](./devguard_pro_logo.png)
+
 
 ```text
   _____              _____                       _   _____           

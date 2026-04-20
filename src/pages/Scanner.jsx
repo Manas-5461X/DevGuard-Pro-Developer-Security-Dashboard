@@ -179,8 +179,18 @@ export default function Scanner() {
   const [isScanning, setIsScanning] = useState(false);
   const [isEscalating, setIsEscalating] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [aiFailCount, setAiFailCount] = useState(0); // Track consecutive failures
+  const [retryCooldown, setRetryCooldown] = useState(0);
   const [showEditor, setShowEditor] = useState(true);
   const [showDiff, setShowDiff] = useState(false);
+
+  // Handle Retry Cooldown Timer
+  useEffect(() => {
+    if (retryCooldown > 0) {
+      const timer = setInterval(() => setRetryCooldown(prev => prev - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [retryCooldown]);
 
   const current = workspace[language] || { code: DEFAULT_CODE[language], results: [], hasScanned: false, aiResult: null };
   const { code, results, hasScanned, aiResult } = current;
@@ -265,7 +275,7 @@ export default function Scanner() {
     }
   };
 
-  const handleGeminiAnalyze = async (customCode, customResults, auto = false, passedScanId) => {
+  const handleGeminiAnalyze = async (customCode, customResults, auto = false, passedScanId, force = false) => {
     const activeCode = customCode || code;
     const activeResults = customResults || results;
     const activeScanId = passedScanId || currentScanId;
@@ -275,13 +285,15 @@ export default function Scanner() {
     setAiError(null);
 
     try {
-      const result = await analyzeWithGemini(activeCode, activeResults);
+      const result = await analyzeWithGemini(activeCode, activeResults, force);
       updateCurrentWorkspace({ aiResult: result, hasScanned: true });
+      setAiFailCount(0); // Reset on success
       if (activeScanId) {
         await updateScan(activeScanId, { fixedCode: result.fixedCode, aiAnalysis: result.analysis, hasAiRemediation: true });
       }
     } catch (err) {
       setAiError(err.message);
+      setAiFailCount(prev => prev + 1);
       if (auto) updateCurrentWorkspace({ hasScanned: true });
     } finally {
       setIsAnalyzing(false); setIsEscalating(false);
@@ -401,16 +413,54 @@ export default function Scanner() {
           <h2 className="text-[11px] font-bold text-cyber-primary uppercase tracking-[0.2em] flex items-center gap-2">
             {aiResult ? <><Bot size={14} /> Intelligence Report</> : <><ShieldAlert size={14} /> Security Matrix</>}
           </h2>
-          {hasScanned && !aiResult && (
-            <span className="text-[9px] font-bold px-2 py-0.5 bg-white/5 border border-white/10 text-cyber-dark-text rounded-full uppercase">{results.length} Found</span>
+          {hasScanned && (
+            <span className={`text-[9px] font-bold px-2 py-0.5 border rounded-full uppercase transition-all ${
+              (aiResult || results.length === 0) 
+                ? 'bg-cyber-primary/10 border-cyber-primary/20 text-cyber-primary shadow-[0_0_10px_rgba(74,222,128,0.1)]' 
+                : 'bg-cyber-error/10 border-cyber-error/20 text-cyber-error'
+            }`}>
+              {aiResult ? 'Secure' : results.length === 0 ? 'Verified' : `${results.length} Found`}
+            </span>
           )}
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide pb-20">
           {aiError && (
-            <div className="bg-cyber-error/10 border border-cyber-error/30 p-4 rounded-xl text-cyber-error text-[12px] flex gap-3 mb-2">
-              <AlertTriangle size={16} className="shrink-0" />
-              <p>{aiError}</p>
+            <div className="bg-cyber-error/10 border border-cyber-error/30 p-4 rounded-xl text-cyber-error text-[12px] flex flex-col gap-3 mb-2 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex gap-3">
+                <AlertTriangle size={16} className="shrink-0" />
+                <p className="flex-1">{aiError}</p>
+              </div>
+              <button 
+                onClick={() => {
+                  if (aiError.toLowerCase().includes('quota') || aiError.includes('429')) {
+                    setRetryCooldown(60);
+                  }
+                  handleGeminiAnalyze();
+                }}
+                disabled={retryCooldown > 0 || isAnalyzing}
+                className="w-full py-2 bg-cyber-error/20 hover:bg-cyber-error/30 border border-cyber-error/40 text-cyber-error font-bold uppercase tracking-widest text-[10px] rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {retryCooldown > 0 ? (
+                  <><RotateCcw size={12} className="animate-spin" /> Unlock in {retryCooldown}s...</>
+                ) : (
+                  <><RotateCcw size={12} /> Try Again Now</>
+                )}
+              </button>
+
+              {aiFailCount >= 2 && (
+                <div className="mt-2 border-t border-cyber-error/20 pt-3">
+                  <p className="text-[10px] text-[#A3A3A3] mb-2 leading-relaxed">
+                    Persistent quota issues? Use **Simulation Mode** to generate a high-fidelity deep audit report locally for your presentation.
+                  </p>
+                  <button 
+                    onClick={() => handleGeminiAnalyze(null, null, false, null, true)}
+                    className="w-full py-2 bg-cyber-primary/10 hover:bg-cyber-primary/20 border border-cyber-primary/30 text-cyber-primary font-bold uppercase tracking-widest text-[10px] rounded-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Bot size={12} /> Activate Simulation Mode
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {isScanning ? (
@@ -418,10 +468,10 @@ export default function Scanner() {
               <div className="relative"><div className="w-20 h-20 border-4 border-cyber-primary/10 border-t-cyber-primary rounded-full animate-spin" /><div className="absolute inset-0 flex items-center justify-center"><ShieldAlert size={28} className="text-cyber-primary animate-pulse" /></div></div>
               <div><h3 className="text-cyber-text font-bold text-sm tracking-widest uppercase mb-2">Analyzing Patterns...</h3><p className="text-cyber-dark-text text-xs">Running Heuristic Engine Layer 1</p></div>
             </div>
-          ) : isEscalating && isAnalyzing ? (
+          ) : isAnalyzing && (isEscalating || !aiResult) ? (
             <div className="h-full flex flex-col items-center justify-center text-center gap-6 p-8">
               <div className="relative"><div className="w-20 h-20 border-4 border-cyber-primary/10 border-b-cyber-primary rounded-full animate-spin" /><div className="absolute inset-0 flex items-center justify-center"><Bot size={28} className="text-cyber-primary animate-pulse" /></div></div>
-              <div><h3 className="text-cyber-primary font-bold text-sm tracking-widest uppercase mb-2">Escalating to AI</h3><p className="text-cyber-dark-text text-xs">Cleaning zero findings. Requesting deep audit...</p></div>
+              <div><h3 className="text-cyber-primary font-bold text-sm tracking-widest uppercase mb-2">AI Deep Audit</h3><p className="text-cyber-dark-text text-xs">Querying Gemini 2.5 Intelligence Layer...</p></div>
             </div>
           ) : aiResult ? (
             <div className="bg-cyber-surface border border-cyber-border rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
@@ -467,7 +517,7 @@ export default function Scanner() {
         </div>
 
         {/* ── FIXED ACTION BAR (BOTTOM) ── */}
-        {hasScanned && !isScanning && !isAnalyzing && (
+        {hasScanned && !isScanning && !(isAnalyzing && (isEscalating || !aiResult)) && (
            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-cyber-bg via-cyber-bg to-transparent pt-10">
              <div className="flex gap-2">
                {showDiff && aiResult ? (
@@ -514,20 +564,26 @@ export default function Scanner() {
                     >
                       {bookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />} {bookmarked ? 'Saved' : 'Bookmark'}
                     </button>
-                   {/* ISSUE 2: AI button ALWAYS visible once scan completed if results from heuristic are in */}
-                   <button
-                     onClick={() => handleGeminiAnalyze()}
-                     disabled={isAnalyzing}
-                     className="flex-[1.8] py-3 bg-cyber-primary text-black rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(74,222,128,0.3)] flex items-center justify-center gap-2"
-                   >
-                     <Bot size={14} /> Deep AI Analyze
-                   </button>
-                 </>
+                    <button
+                      onClick={() => handleGeminiAnalyze()}
+                      disabled={isAnalyzing}
+                      className="flex-[1.8] py-3 bg-cyber-primary text-black rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-cyber-primary-hover shadow-[0_0_15px_rgba(74,222,128,0.3)] flex items-center justify-center gap-2"
+                    >
+                      {isAnalyzing ? (
+                        <span className="flex items-center gap-3">
+                          <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                          Analyzing...
+                        </span>
+                      ) : (
+                        <><Bot size={14} /> Deep AI Analyze</>
+                      )}
+                    </button>
+                  </>
                )}
              </div>
            </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
   );
 }

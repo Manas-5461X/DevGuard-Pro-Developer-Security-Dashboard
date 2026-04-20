@@ -305,24 +305,72 @@ export function analyzeCode(code) {
       severity: 'low',
       message: 'Inline event handlers prevent Content-Security Policy (CSP) enforcement.',
       fix: 'Attach event listeners dynamically via addEventListener.'
+    },
+
+    // === 9. DEVOPS & INFRASTRUCTURE (DOCKER/K8S) ===
+    {
+      id: 'docker-root-user',
+      pattern: /USER\s+root/i,
+      type: 'Privileged Container Risk',
+      severity: 'high',
+      message: 'Running Docker containers as root is a major security risk.',
+      fix: 'Create a non-privileged user in the Dockerfile and use the USER instruction to switch to it.'
+    },
+    {
+      id: 'docker-add-vs-copy',
+      pattern: /ADD\s+/i,
+      type: 'Insecure Docker Instruction',
+      severity: 'low',
+      message: 'ADD instruction can download remote files or extract archives automatically, which is risky.',
+      fix: 'Use COPY for local files; use curl/wget for remote files if absolutely necessary.'
+    },
+    {
+      id: 'k8s-privileged-pod',
+      pattern: /privileged\s*:\s*true/i,
+      type: 'Privileged Pod Escalation',
+      severity: 'critical',
+      message: 'Kubernetes pods with "privileged: true" can access the host system resources.',
+      fix: 'Disable privileged mode and use specific Linux capabilities instead.'
+    },
+    {
+      id: 'k8s-missing-resource-limits',
+      pattern: /resources\s*:\s*(?!.*\blimits\b)/is,
+      type: 'DoS Vulnerability (Resource Exhaustion)',
+      severity: 'medium',
+      message: 'Missing resource limits in Kubernetes can lead to node instability.',
+      fix: 'Explicitly define CPU and memory limits for all containers.'
     }
   ];
 
+  let isMultiLineComment = false;
+
   lines.forEach((lineText, index) => {
     const lineNumber = index + 1;
+    const trimmed = lineText.trim();
+
+    // Check for multi-line comment status
+    if (trimmed.startsWith('/*')) isMultiLineComment = true;
+
+    // Only scan if NOT in a comment
+    const isSingleLineComment = trimmed.startsWith('//') || trimmed.startsWith('#');
     
-    rules.forEach((rule) => {
-      if (rule.pattern.test(lineText)) {
-        vulnerabilities.push({
-          type: rule.type,
-          severity: rule.severity,
-          line: lineNumber,
-          message: rule.message,
-          fix: rule.fix,
-          codeSnippet: lineText.trim()
-        });
-      }
-    });
+    if (!isMultiLineComment && !isSingleLineComment) {
+      rules.forEach((rule) => {
+        if (rule.pattern.test(lineText)) {
+          vulnerabilities.push({
+            type: rule.type,
+            severity: rule.severity,
+            line: lineNumber,
+            message: rule.message,
+            fix: rule.fix,
+            codeSnippet: lineText.trim()
+          });
+        }
+      });
+    }
+
+    // End of multi-line comment check (must stay at bottom to include the current line)
+    if (trimmed.includes('*/')) isMultiLineComment = false;
   });
 
   return vulnerabilities;

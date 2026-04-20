@@ -8,185 +8,169 @@ const ScanContext = createContext();
 const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 min
 
 // HELPERS: LocalStorage Persistence
-const getPersistedCache = () => {
+const getStorageKey = (uid) => uid ? `devguard_scans_u_${uid}` : 'devguard_scans_guest';
+
+const getLocalScans = (uid) => {
   try {
-    const saved = localStorage.getItem('devguard_scan_cache_v4');
-    if (!saved) return new Map();
-    const data = JSON.parse(saved);
-    // Backward compatibility: ensure it's a valid array before conversion
-    if (!Array.isArray(data)) return new Map();
-    return new Map(data);
-  } catch (e) { 
-    console.error('Cache hydration failed', e);
-    return new Map(); 
+    const key = getStorageKey(uid);
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    console.error('Local storage read failed', e);
+    return [];
   }
 };
 
-const savePersistedCache = (cache) => {
+const saveLocalScans = (uid, scans) => {
   try {
-    const data = JSON.stringify(Array.from(cache.entries()));
-    localStorage.setItem('devguard_scan_cache_v4', data);
-  } catch (e) {}
+    const key = getStorageKey(uid);
+    // Limit to 20 scans locally to prevent storage bloat
+    const limited = scans.slice(0, 20);
+    localStorage.setItem(key, JSON.stringify(limited));
+  } catch (e) {
+    console.error('Local storage write failed', e);
+  }
 };
-
-const userScanCache = getPersistedCache();
 
 export function ScanProvider({ children }) {
   const { currentUser } = useAuth();
   const uid = currentUser?.uid;
 
-  const [scans, setScans] = useState([]);
+  const [scans, setScans] = useState(() => getLocalScans(null)); // Initialize with guest scans or empty
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // FETCH: Bridging Cloud & Local Storage
+  // Sync from Firebase on load/auth change
   const fetchScans = useCallback(async (options = { silent: false, force: false }) => {
-    if (!uid) return;
-
-    const cached = userScanCache.get(uid);
-    const isStale = !cached || (Date.now() - cached.fetchTime > CACHE_STALE_TIME);
-
-    // If fresh and not forcing, return cached instantly
-    if (!isStale && !options.force && cached) {
-      setScans(cached.scans);
+    if (!uid) {
+      setScans(getLocalScans(null));
       setLoading(false);
-      setRefreshing(false);
       return;
     }
 
-    if (cached && (options.silent || options.force)) {
-      setRefreshing(true);
-    } else if (!cached) {
-      setLoading(true);
-    }
+    if (!options.silent && !options.force) setLoading(true);
+    if (options.silent || options.force) setRefreshing(true);
 
     try {
       const q = query(collection(db, 'scans'), where('userId', '==', uid));
       const querySnapshot = await getDocs(q);
-      const scansData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const scansData = querySnapshot.docs.map(d => ({ 
+        id: d.id, 
+        ...d.data(),
+        // Normalize createdAt for UI consistency
+        createdAt: d.data().createdAt?.toMillis ? { toMillis: () => d.data().createdAt.toMillis() } : d.data().createdAt 
+      }));
       
-      // Sort by creation time (most recent first)
       scansData.sort((a, b) => {
         const timeA = a.createdAt?.toMillis?.() || 0;
         const timeB = b.createdAt?.toMillis?.() || 0;
         return timeB - timeA;
       });
 
-      userScanCache.set(uid, { scans: scansData, fetchTime: Date.now() });
-      savePersistedCache(userScanCache);
       setScans(scansData);
+      saveLocalScans(uid, scansData);
     } catch (err) {
-      console.error('Error fetching scans:', err);
+      console.error('Firebase fetch failed, falling back to local', err);
+      setScans(getLocalScans(uid));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [uid]);
 
-  // Handle Auth Changes: Crucial for persistence
   useEffect(() => {
-    if (!uid) {
-      setScans([]);
-      setLoading(false);
-      return;
-    }
-
-    const cached = userScanCache.get(uid);
-    if (cached) {
-      setScans(cached.scans);
-      // Even if cached, do a silent background refresh to ensure consistency
+    // Immediate hydration from local storage
+    const local = getLocalScans(uid);
+    setScans(local);
+    
+    if (uid) {
       fetchScans({ silent: true });
     } else {
-      fetchScans();
+      setLoading(false);
     }
   }, [uid, fetchScans]);
 
   const saveScan = async (code, vulnerabilities, language) => {
-    if (!uid) return null;
-    try {
-      // Improved Naming logic
-      const lines = code.split('\n').map(l => l.trim()).filter(l => {
-        return l.length > 0 && !/^(?:\/\/|#|\/\*|\*)/.test(l) && !l.toLowerCase().includes('paste your');
-      });
-      
-      const firstLine = lines[0] || 'Clean Snippet';
-      let baseTitle = firstLine.replace(/^[^a-zA-Z0-9]+/, '').substring(0, 35).trim() || 'Untitled Scan';
-      const shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const title = `${baseTitle} #${shortId}`;
+    const tempId = `local_${Date.now()}`;
+    const lines = code.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !/^(?:\/\/|#|\/\*)/.test(l));
+    const firstLine = lines[0] || 'Snippet';
+    const title = `${firstLine.substring(0, 30)} #${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
-      const currentScans = [...scans];
-      
-      // Enforce 7-scan limit
-      if (currentScans.length >= 7) {
-        const oldest = currentScans[currentScans.length - 1];
-        await deleteDoc(doc(db, 'scans', oldest.id));
-        currentScans.pop();
+    const newScan = {
+      id: tempId,
+      userId: uid || 'guest',
+      title,
+      code,
+      language: language || 'javascript',
+      vulnerabilities,
+      issueCount: vulnerabilities.length,
+      isBookmarked: false,
+      createdAt: { toMillis: () => Date.now() }
+    };
+
+    // 1. Update UI and Local Storage Instantly
+    const updated = [newScan, ...scans].slice(0, 20);
+    setScans(updated);
+    saveLocalScans(uid, updated);
+
+    // 2. Sync to Firebase if logged in
+    if (uid) {
+      try {
+        const payload = { ...newScan, userId: uid, createdAt: serverTimestamp() };
+        delete payload.id; // Let Firebase generate ID
+        const docRef = await addDoc(collection(db, 'scans'), payload);
+        
+        // Update local item with real Firebase ID
+        const finalScans = updated.map(s => s.id === tempId ? { ...s, id: docRef.id } : s);
+        setScans(finalScans);
+        saveLocalScans(uid, finalScans);
+        return docRef.id;
+      } catch (err) {
+        console.error('Firebase sync failed', err);
       }
-
-      const payload = {
-        userId: uid,
-        title,
-        code,
-        language: language || 'javascript',
-        vulnerabilities,
-        issueCount: vulnerabilities.length,
-        isBookmarked: false,
-        createdAt: serverTimestamp()
-      };
-      
-      const docRef = await addDoc(collection(db, 'scans'), payload);
-      const newScan = { id: docRef.id, ...payload, createdAt: { toMillis: () => Date.now() } };
-      
-      const updated = [newScan, ...currentScans];
-      userScanCache.set(uid, { scans: updated, fetchTime: Date.now() });
-      savePersistedCache(userScanCache);
-      setScans(updated);
-
-      return docRef.id;
-    } catch (err) {
-      console.error('Error saving scan:', err);
-      throw err;
     }
+    return tempId;
   };
 
   const updateScan = async (scanId, data) => {
-    if (!uid) return;
-    try {
-      const updatedScans = scans.map(s => s.id === scanId ? { ...s, ...data } : s);
-      setScans(updatedScans);
-      userScanCache.set(uid, { scans: updatedScans, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
-      savePersistedCache(userScanCache);
-      await updateDoc(doc(db, 'scans', scanId), data);
-    } catch (err) {
-      console.error('Error updating scan:', err);
+    const updated = scans.map(s => s.id === scanId ? { ...s, ...data } : s);
+    setScans(updated);
+    saveLocalScans(uid, updated);
+
+    if (uid && !scanId.startsWith('local_')) {
+      try {
+        await updateDoc(doc(db, 'scans', scanId), data);
+      } catch (err) {
+        console.error('Firebase update failed', err);
+      }
     }
   };
 
   const toggleBookmark = async (scanId, currentStatus) => {
-    if (!uid) return;
-    try {
-      const updated = scans.map(s => s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s);
-      setScans(updated);
-      userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
-      savePersistedCache(userScanCache);
-      await updateDoc(doc(db, 'scans', scanId), { isBookmarked: !currentStatus });
-    } catch (err) {
-      console.error('Error toggling bookmark:', err);
-      fetchScans({ silent: true });
+    const updated = scans.map(s => s.id === scanId ? { ...s, isBookmarked: !currentStatus } : s);
+    setScans(updated);
+    saveLocalScans(uid, updated);
+
+    if (uid && !scanId.startsWith('local_')) {
+      try {
+        await updateDoc(doc(db, 'scans', scanId), { isBookmarked: !currentStatus });
+      } catch (err) {
+        console.error('Firebase bookmark failed', err);
+      }
     }
   };
 
   const removeScan = async (scanId) => {
-    if (!uid) return;
-    try {
-      const updated = scans.filter(s => s.id !== scanId);
-      setScans(updated);
-      userScanCache.set(uid, { scans: updated, fetchTime: userScanCache.get(uid)?.fetchTime || Date.now() });
-      savePersistedCache(userScanCache);
-      await deleteDoc(doc(db, 'scans', scanId));
-    } catch (err) {
-      console.error('Error deleting scan:', err);
-      fetchScans({ silent: true });
+    const updated = scans.filter(s => s.id !== scanId);
+    setScans(updated);
+    saveLocalScans(uid, updated);
+
+    if (uid && !scanId.startsWith('local_')) {
+      try {
+        await deleteDoc(doc(db, 'scans', scanId));
+      } catch (err) {
+        console.error('Firebase delete failed', err);
+      }
     }
   };
 

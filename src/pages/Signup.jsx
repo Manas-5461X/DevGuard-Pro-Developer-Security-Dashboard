@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Shield, Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 
 function getFirebaseSignupError(err) {
+  console.error("Firebase Auth Error:", err);
   switch (err?.code) {
     case 'auth/email-already-in-use':
       return { message: "An account with this email already exists.", action: 'login', actionText: 'Sign in instead' };
@@ -17,8 +18,10 @@ function getFirebaseSignupError(err) {
       return { message: "Sign-in popup was closed. Please try again.", action: null };
     case 'auth/account-exists-with-different-credential':
       return { message: "An account already exists with this email using a different sign-in method. Try signing in with email/password.", action: null };
+    case 'auth/unauthorized-domain':
+      return { message: "This domain is not authorized in Firebase. Please add it to Firebase Console.", action: null };
     default:
-      return { message: "Could not create account. Please try again.", action: null };
+      return { message: err?.message || "Could not create account. Please try again.", action: null };
   }
 }
 
